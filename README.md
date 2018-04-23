@@ -1,5 +1,15 @@
-# mHiC
-Multi-mapping strategy for Hi-C data in order to make use of reads aligned to multiple positions.
+# mHi-C: robust leveraging of multi-mapping reads in Hi-C analysis
+Zheng, Ye, Ferhat Ay, and Sunduz Keles. "mHi-C: robust leveraging of multi-mapping reads in Hi-C analysis." bioRxiv (2018): 301705.
+
+The pipeline is developed in Keles Research Group in University of Wisconsin - Madison and please contact Ye Zheng (yezheng@stat.wisc.edu) for any question and suggestion.
+
+## What is mHi-C?
+mHi-C is short for \textbf{m}ulti-mapping strategy for \textbf{Hi-C} data in order to make use of reads aligned to multiple positions. mHi-C pipeline was developed to incorporate multi-mapping reads starting from unaligned read files and produces a set of statistically significant contacts at a give resolution. Remarkably, each main step is organized into independent script with flexible user-defined parameters and implementation options. Therefore, analysis can be carried out from any step of the work-flow and easily fits in high performance computing enviroments for parallel computations.
+
+<figure>
+	<img src="figures/chrX_juicebox.png" alt="Contact matrices comparison between Uni-setting and Uni&Multi-setting">
+</figure>
+
 
 ## mhic_step0-6.sh
 Caller for all the steps in mHi-C pipeline, starting from alignment to multi-reads alignment probability assignment. Customize it for you own use.
