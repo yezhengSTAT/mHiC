@@ -21,13 +21,16 @@ validI=$2
 bin=$3
 dir=${validI%/*}
 mappability=$4
-minMap=$5
-minCount=$6
-summaryFile=${7:-""}
+minMap=${5:-0.5}
+minCount=${6:-1}
+maxIter=${7:-100}
+summaryFile=${8:-""}
 
 if [ ! -d $dir/sorttmp ]; then
     mkdir -p $dir/sorttmp
 fi
+
+awk -v OFS="\t" '{print $1, $2, $6, $7, $11}' $validP.UNI >$validP.UNI.binPair
 
 # Remove PCR duplicates based on alignment chrom + position
 sort -k2,2V -k3,3n -k7,7V -k8,8n -T $dir/sorttmp  $validP  | awk -v OFS="\t" 'BEGIN{c1=0;c2=0;s1=0;s2=0}(c1!=$2 || c2!=$7 || s1!=$3 || s2!=$8){print;c1=$2;c2=$7;s1=$3;s2=$8}' | sort -k1,1V -k2,2V -k6,6n -k7,7V -k11,11n -T $dir/sorttmp > $validI.nodup
@@ -84,10 +87,10 @@ if [ "$minCount" -gt "1" ];then
     awk -v minC=$minCount -v OFS="\t" '$5>=minC {print $0}' $validI.binPairCount.uni | sort -k1,1V -k2,2n -k3,3V -k4,4n >$validI.binPairCount.uni.minCount$minCount
 
     # ICE normalization with filtering low mappability regions
-    python $bin/ICE-with-sparseMatrix.py $validI.binPairCount.uni.minCount$minCount $bin/$mappability l1 $validI.binPairCount.uni.afterICE $minMap
+    python $bin/ICE-with-sparseMatrix.py $validI.binPairCount.uni.minCount$minCount $bin/$mappFile l1 $validI.binPairCount.uni.afterICE $minMap $maxIter
 else
     # ICE normalization with filtering low mappability regions
-    python $bin/ICE-with-sparseMatrix.py $validI.binPairCount.uni $bin/$mappability l1 $validI.binPairCount.uni.afterICE $minMap
+    python $bin/ICE-with-sparseMatrix.py $validI.binPairCount.uni $bin/$mappFile l1 $validI.binPairCount.uni.afterICE $minMap $maxIter
 fi
 
 # Uni bin marginal pair

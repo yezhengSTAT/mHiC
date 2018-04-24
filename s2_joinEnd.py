@@ -22,11 +22,11 @@ def get_args():
     """Get arguments"""
     parser = argparse.ArgumentParser(description = '------------Usage Start------------',
                                      epilog = '------------Usage End------------')
-    parser.add_argument('-r1', '--read1', help = 'Single-ended read 1 file.')
-    parser.add_argument('-r2', '--read2', help = 'Single-ended read 2 file.')
+    parser.add_argument('-r1', '--readEnd1', help = 'Path to the aligned file of read end 1.')
+    parser.add_argument('-r2', '--readEnd2', help = 'Path to the aligned file of read end 2.')
     parser.add_argument('-o', '--output', help = 'Output file.', default = None)
     parser.add_argument('-s', '--summary', help = '(Optional) Summary of alignment results. Default is true.', default = True)
-    parser.add_argument('-sf', '--summaryFile', help = '(Optional) Summary file path . Default is None.', default = None)
+    parser.add_argument('-sf', '--summaryFile', help = '(Optional) Summary file path . Default is infileName.alignSummary.', default = None)
     parser.add_argument('-v', '--verbose', help = '(Optional) Verbose. Default is true.', default = True)
 
     args = parser.parse_args()

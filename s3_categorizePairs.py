@@ -32,7 +32,7 @@ def get_args():
     parser.add_argument('-m', '--method', help = "Binning methods: by fixed number of window size, i.e. window, or fixed number of RE fragment, i.e. fragment.", default = "fragment")
     parser.add_argument('-b', '--bin', help = "Binning resolution. If binning by fixed number of window size, it can be 10000 or any other suitable bin size. If binning by fixed number of RE fragment, it can be 10 representing 10RE fragments or other suitable bin size.", default = None)
     parser.add_argument('-s', '--summary', help = '(Optional) Summary of categories. Default is true.', default = True)
-    parser.add_argument('-sf', '--summaryFile', help = '(Optional) Summary file path. Default is None.', default = None)
+    parser.add_argument('-sf', '--summaryFile', help = '(Optional) Summary file path. Default is alignedFileName.readCategorySummary.', default = None)
     parser.add_argument('-v', '--verbose', help = '(Optional) Verbose. Default is true.', default = True)
 
     args = parser.parse_args()
@@ -809,7 +809,7 @@ if __name__ == "__main__":
     
     if args.summary:
         if args.summaryFile is None:
-            outSummary = open(args.outdir + "/" + fileName + ".readPairTypeSummary", "w")
+            outSummary = open(args.outdir + "/" + fileName + ".readCategorySummary", "w")
         else:
             outSummary = open(args.summaryFile, "a")
         outSummary.write("\n" + "\n")
