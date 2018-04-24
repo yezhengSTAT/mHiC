@@ -26,13 +26,11 @@ $sraDir/bin/fastq-dump -F --split-files $path/$id.sra -O $path
 ## Step 1-3: Can be run in parallel.
 
 name=$1 #Can be replicate, e.g "rep1"
-mkdir $name
 resultsDir=$(pwd)/$name
-
-sequencesDir=$(pwd)/Sequences # Given
+ref=$(pwd)/ReferenceGenome/hg19.fasta
+fastqDir=$(pwd)/Sequences # Given
 cutsite="GATCGATC" # for MboI
 seqLength=25
-
 resolution=5000
 validP="${resultsDir}/s3/w${resolution}/${name}.validPairs"
 validI="${resultsDir}/s4/w${resolution}/${name}.validPairs"
@@ -48,7 +46,7 @@ g++ -std=c++0x -o $bin/cutsite_trimming_mHiC $bin/cutsite_trimming_mHiC.cpp
 echo "Prepare Output Directory and Summary File!"
 
 echo "Start step 1 - alignment!"
-bash s1_bwaAlignment.sh $name $ref $bwaDir $samtoolsDir $sequencesDir $resultsDir $bin 1 $cutsite $seqLength $resultsDir/mHiC.summary_w${resolution}
+bash s1_bwaAlignment.sh $name $ref $bwaDir $samtoolsDir $fastqDir $resultsDir $bin 1 $cutsite $seqLength $resultsDir/mHiC.summary_w${resolution}
 
 echo "Start step 2 - joining read ends!"
 python s2_joinEnd.py -r1 ${resultsDir}/s1/${name}_1.sam -r2 ${resultsDir}/s1/${name}_2.sam -o ${resultsDir}/s2/${name}.sam -sf $resultsDir/mHiC.summary_w${resolution}

@@ -21,8 +21,8 @@ validI=$2
 bin=$3
 dir=${validI%/*}
 mappability=$4
-minMap=$5
-minCount=$6
+minMap=${5:-"0.5"}
+minCount=${6:-"1"}
 summaryFile=${7:-""}
 
 if [ ! -d $dir/sorttmp ]; then
@@ -84,10 +84,10 @@ if [ "$minCount" -gt "1" ];then
     awk -v minC=$minCount -v OFS="\t" '$5>=minC {print $0}' $validI.binPairCount.uni | sort -k1,1V -k2,2n -k3,3V -k4,4n >$validI.binPairCount.uni.minCount$minCount
 
     # ICE normalization with filtering low mappability regions
-    python $bin/ICE-with-sparseMatrix.py $validI.binPairCount.uni.minCount$minCount $bin/$mappability l1 $validI.binPairCount.uni.afterICE $minMap
+    python $bin/ICE-with-sparseMatrix.py $validI.binPairCount.uni.minCount$minCount $bin/$mappFile l1 $validI.binPairCount.uni.afterICE $minMap
 else
     # ICE normalization with filtering low mappability regions
-    python $bin/ICE-with-sparseMatrix.py $validI.binPairCount.uni $bin/$mappability l1 $validI.binPairCount.uni.afterICE $minMap
+    python $bin/ICE-with-sparseMatrix.py $validI.binPairCount.uni $bin/$mappFile l1 $validI.binPairCount.uni.afterICE $minMap
 fi
 
 # Uni bin marginal pair
