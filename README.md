@@ -1,5 +1,5 @@
 # mHi-C: robust leveraging of multi-mapping reads in Hi-C analysis
-Zheng, Ye, Ferhat Ay, and Sunduz Keles. "mHi-C: robust leveraging of multi-mapping reads in Hi-C analysis." bioRxiv (2018): 301705.
+Ye Zheng, Ferhat Ay, and Sunduz Keles. "mHi-C: robust leveraging of multi-mapping reads in Hi-C analysis." bioRxiv (2018): 301705.
 
 The pipeline is developed in Keles Research Group in University of Wisconsin - Madison and please contact Ye Zheng (yezheng@stat.wisc.edu) for any question and suggestion.
 
@@ -13,7 +13,7 @@ mHi-C is short for **m**ulti-mapping strategy for **Hi-C** data in order to make
 ### Step 0 - Pipeline caller [mhic_step0-6.sh]
 Caller for all the steps in mHi-C pipeline, starting from alignment to multi-reads alignment probability assignment. This is a demo script to run multiple steps at once. Parameters in the script should be customize it for you own use.
 
-#### 0.1 Usage
+#### 0.0 Usage
 
 ```
 bash mhic_step0-6.sh
@@ -56,6 +56,9 @@ cutsite="AAGCTAGCTT" # for HindIII
 seqLength=25
 resolution=40000
 
+## compile cutsite to trim chimeric reads
+g++ -std=c++0x -o $bin/cutsite_trimming_mHiC $bin/cutsite_trimming_mHiC.cpp
+
 bash s1_bwaAlignment.sh "$name" "$ref" "$bwaDir" "$samtoolsDir" "$fastqDir" "$resultsDir/s1" "$bin" 8 "$cutsite" "$seqLength" "$resultsDir/mHiC.summary_w${resolution}_s1"
 
 ```
@@ -64,7 +67,7 @@ bash s1_bwaAlignment.sh "$name" "$ref" "$bwaDir" "$samtoolsDir" "$fastqDir" "$re
 In step 1, two ends (_1.fastq and _2.fastq) are aligned separetely to the reference genome which can be paired by read ID. Thus paired-end reads can be formed and each paired-end read represent one interaction.
 
 #### 2.0 Requirements
-- python3 (>= 3.6)
+- python (>= 3.6)
 - numpy (>= 1.13.1)
 - scipy (>= 0.19.1)
 - pysam (>= 0.12.0)
@@ -88,7 +91,7 @@ name="IMR90_rep1"
 resultsDir="/projects/IMR90"
 resolution=40000
 
-python3 s2_joinEnd.py -r1 ${resultsDir}/s1/${name}_1.sam -r2 ${resultsDir}/s1/${name}_2.sam -o ${resultsDir}/s2/${name}.sam -sf $resultsDir/mHiC.summary_w${resolution}_s2
+python s2_joinEnd.py -r1 ${resultsDir}/s1/${name}_1.sam -r2 ${resultsDir}/s1/${name}_2.sam -o ${resultsDir}/s2/${name}.sam -sf $resultsDir/mHiC.summary_w${resolution}_s2
 ```
 
 
@@ -96,7 +99,7 @@ python3 s2_joinEnd.py -r1 ${resultsDir}/s1/${name}_1.sam -r2 ${resultsDir}/s1/${
 This step is to ensure valid read pairs are passed on to downstream analysis while excluding dangling end, self circle, religation, too short-range interactions as well as  invalid alignment that are far away from restriction enzyme cutting sites. Read pairs in each category are summarized.
 
 #### 3.0 Requirements
-- python3 (>= 3.6)
+- python (>= 3.6)
 - numpy (>= 1.13.1)
 - scipy (>= 0.19.1)
 - pysam (>= 0.12.0)
@@ -152,7 +155,7 @@ chr1    39255   43602   HIC_chr1_11     0       +
 Remove the PCR duplicates and bin the genome by fixed window size.
 
 #### 4.0 Requirements
-- python3 (>= 3.6)
+- python (>= 3.6)
 - numpy (>= 1.13.1)
 
 #### 4.1 Arguments
@@ -180,6 +183,7 @@ validI="${resultsDir}/s4/w${resolution}/${name}.validPairs"
 mappFile="${bin}/human-hg19.HindIII.w${resolution}"
 minMap=0.5 #min mappability threshold
 minCount=1 #min contact counts allowed
+maxIter=150
 
 bash s4_bin.sh "$validP" "$validI" "$bin" "$mappFile" "$minMap" "$minCount" "$maxIter" "$resultsDir/mHiC.summary_w${resolution}_s4"
 ```
@@ -209,7 +213,7 @@ chr1    620000  10      0.0029  0.38705
 Build the prior for mHi-C model using uni-reads only.
 
 #### 5.0 Requirements
-- python3 (>= 3.6)
+- python (>= 3.6)
 - numpy (>= 1.13.1)
 - scipy (>= 0.19.1)
 - sklearn (>= 0.19.1) 
@@ -241,7 +245,7 @@ python s5_prior.py -f $validI.binPair.Marginal -i $validI.binPairCount.uni.after
 In this step, allocation probabilities are assigned to each multi-mapping reads at each potential alignment position. s6_em_cython.pyx will be called to accelerate computation process.
 
 #### 6.0 Requirements
-- python3 (>= 3.6)
+- python (>= 3.6)
 - pyximport
 
 #### 6.1 Arguments
