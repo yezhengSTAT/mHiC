@@ -6,7 +6,7 @@ The pipeline is developed in Keles Research Group in University of Wisconsin - M
 ## What is mHi-C?
 mHi-C is short for **m**ulti-mapping strategy for **Hi-C** data in order to make use of reads aligned to multiple positions. mHi-C pipeline was developed to incorporate multi-mapping reads starting from unaligned read files and produces a set of statistically significant contacts at a give resolution. Remarkably, each main step is organized into independent script with flexible user-defined parameters and implementation options. Therefore, analysis can be carried out from any step of the work-flow and easily fits in high performance computing enviroments for parallel computations.
 
-![Contact matrices comparison between Uni-setting and Uni&Multi-setting](/p/keles/ENCODE-TE/volume1/YeZheng/github/mHiC/figures/mHiC_gif.gif "Contact matrices comparison")
+![Contact matrices comparison between Uni-setting and Uni&Multi-setting](figures/mHiC_gif.gif "Contact matrices comparison")
 
 ## mHi-C main procedures
 
@@ -75,9 +75,9 @@ In step 1, two ends (_1.fastq and _2.fastq) are aligned separetely to the refere
 ```
 readEnd1	(-r1/--readEnd1)	    : Path to the aligned file of read end 1.
 readEnd2	(-r2/--readEnd2)	    : Path to the aligned file of read end 2.
-output		(-o/--output)		      : Path to the aligned paired-end file.
+output		(-o/--output)		    : Path to the aligned paired-end file.
 summary		(-s/--summary)		    : [Optional] Summarize alignment results, i.e. number of unmapped reads, singleton and mapped reads, etc. Default is true.
-summaryFile	(-sf/--summaryFile)	: [Optional] Path to the summary file including the summary file name. Default is alignedFileName.alignSummary
+summaryFile	(-sf/--summaryFile)	    : [Optional] Path to the summary file including the summary file name. Default is alignedFileName.alignSummary
 verbose		(-v/--verbose)		    : [Optional] Verbose. Default is true.
 
 ```
@@ -106,13 +106,13 @@ This step is to ensure valid read pairs are passed on to downstream analysis whi
 
 ```
 fragment	(-f/--fragment)		: Restriction Enzyme(RE) fragment file.
-read		(-r/--read)		      : Paired-ended read alignment file from step 2.
-outdir		(-o/--outdir)		  : Output directory to save category results.
-lower		(-l/--lower)		    : Lower bound of the read pair distances summation from read end alignment position to its assigned RE fragment cutting site. Default value is None indicating no restriction. Recommended 50.
-upper		(-u/--upper)		    : Upper bound of the read pair distances summation from read end alignment position to its assigned RE fragment cutting site. Default value is None indicating no restriction. Recommended 500.
+read		(-r/--read)		: Paired-ended read alignment file from step 2.
+outdir		(-o/--outdir)		: Output directory to save category results.
+lower		(-l/--lower)		: Lower bound of the read pair distances summation from read end alignment position to its assigned RE fragment cutting site. Default value is None indicating no restriction. Recommended 50.
+upper		(-u/--upper)		: Upper bound of the read pair distances summation from read end alignment position to its assigned RE fragment cutting site. Default value is None indicating no restriction. Recommended 500.
 distance	(-d/--distance)		: Minimum distance between intrachromosomal read pair alignments positions. Default value is None indicating no restriction. Recommended 20k or two times the resolution.
-binMethod	(-m/--method)		  : Binning methods: by fixed number of window size, i.e. window, or fixed number of RE fragment, i.e. fragment. By default, binning by window is utilized.
-resolution	(-b/--bin)		  : Binning resolution. If binning by fixed number of window size, it can be 10000 or any other suitable bin size. If binning by fixed number of RE fragment, it can be 10 representing 10RE fragments or other suitable bin size.
+binMethod	(-m/--method)		: Binning methods: by fixed number of window size, i.e. window, or fixed number of RE fragment, i.e. fragment. By default, binning by window is utilized.
+resolution	(-b/--bin)		: Binning resolution. If binning by fixed number of window size, it can be 10000 or any other suitable bin size. If binning by fixed number of RE fragment, it can be 10 representing 10RE fragments or other suitable bin size.
 summary		(-s/--summary)		: [Optional] Summarize the categories of read pairs. Default is true.
 summaryFile	(-sf/--summaryFile)	: [Optional] Path to the summary file including the summary file name. Default is alignedFileName.readCategorySummary.
 verbose		(-v/--verbose)		: [Optional] Verbose. Default is true.
@@ -158,14 +158,14 @@ Remove the PCR duplicates and bin the genome by fixed window size.
 #### 4.1 Arguments
 
 ```
-1. validP	      : Path to the valid read pairs obtained from step3.
-2. validI	      : Path to the output non-duplicated valid interactions. Users can take this chance to rename the interaction files otherwise users can set it to be the same as validP
-3. bin		      : Path to the bin folder where ICE normalization script can be found.
+1. validP	    : Path to the valid read pairs obtained from step3.
+2. validI	    : Path to the output non-duplicated valid interactions. Users can take this chance to rename the interaction files otherwise users can set it to be the same as validP
+3. bin		    : Path to the bin folder where ICE normalization script can be found.
 4. mappFile	    : Path to the mappability file.
 5. minMapp	    : Minimum mappability of the regions considered. Default is 0.5.
 6. minCount	    : Minimum contact counts of the bin pairs considered. Default is 1.
 7. maxInter	    : Maximum iteraction of ICE to normalize contact matrix. Default is 100.
-8. summaryFile	: Summary file name. Default is rmDuplicates.summary.
+8. summaryFile	    : Summary file name. Default is rmDuplicates.summary.
 
 ```
 #### 4.2 Usage
@@ -218,10 +218,10 @@ Build the prior for mHi-C model using uni-reads only.
 
 ```
 fragment	(-f/--fragments)	    : Marginal bin list of all the interactions. Midpoints of each fragment is utilized.
-interaction	(-i/--interactions)	: Interaction files of uni-reads normalized by ICE in step 4.
-outdir		(-o/--outdir)		      : Path to save outputs.
-splineBin	(-b/--noOfBins)	    	: Number of equal-occupancy bins. Default is 100.
-priorName	(-l/--lib)		        : Name of file that save the prior quantifying the relationship between random contact probability and genomic distances	.
+interaction	(-i/--interactions)	    : Interaction files of uni-reads normalized by ICE in step 4.
+outdir		(-o/--outdir)		    : Path to save outputs.
+splineBin	(-b/--noOfBins)	    	    : Number of equal-occupancy bins. Default is 100.
+priorName	(-l/--lib)		    : Name of file that save the prior quantifying the relationship between random contact probability and genomic distances	.
 ```
 
 #### 5.2 Usage
@@ -247,13 +247,13 @@ In this step, allocation probabilities are assigned to each multi-mapping reads 
 #### 6.1 Arguments
 
 ```
-prior		(-p/--prior)        : Prior built in step 5.
-uniCount	(-u/--uni)		    : Uni-reads bin-pair contact count file.
-multiBinPair	(-m/--multi)	: Multi-reads contact file.
+prior		(-p/--prior)		: Prior built in step 5.
+uniCount	(-u/--uni)		: Uni-reads bin-pair contact count file.
+multiBinPair	(-m/--multi)		: Multi-reads contact file.
 multiKeys	(-mk/--multikeys)	: Multi-reads contact bin keys.
 threshold	(-t/--threshold)	: Multi-reads contact probability threshold to extact high quality multi-mapping contact.
 filename	(-f/--filename)		: Multi-reads contact posterior probability assignment output file name. ".mHiC" will be added as suffix.
-outdir		(-o/--outdir)		  : Output directory to save results.
+outdir		(-o/--outdir)		: Output directory to save results.
 verbose		(-v/--verbose)		: [Optional] Verbose. Default is true.
 ```
 
