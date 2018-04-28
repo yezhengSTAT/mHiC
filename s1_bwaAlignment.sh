@@ -46,7 +46,7 @@ do
     # step1.3 - trim and filter unmapped
     echo "Step1.3 - Trim unmapped reads until the restriction enzyme cutting site."
     $samtoolsDir/samtools fastq $resultsDir/$name\_unmapped_$i.sam >$resultsDir/$name\_unmapped_$i.fastq
-    $bin/cutsite_trimming_Ye --fastq $resultsDir/$name\_unmapped_$i.fastq --cutsite $cutsite --out $resultsDir/$name\_unmapped_trim_$i.fastq --rmuntrim
+    $bin/cutsite_trimming_mHiC --fastq $resultsDir/$name\_unmapped_$i.fastq --cutsite $cutsite --out $resultsDir/$name\_unmapped_trim_$i.fastq --rmuntrim
 
     awk -v minLen=$seqLength 'BEGIN {OFS = "\n"} {header = $0 ; getline seq ; getline qheader ; getline qseq ; if (length(seq) >= minLen) {print header, seq, qheader, qseq}}' < $resultsDir/$name\_unmapped_trim_$i.fastq >$resultsDir/$name\_unmapped_trim_filter_$i.fastq
 
