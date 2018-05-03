@@ -30,7 +30,7 @@ if [ ! -d $dir/sorttmp ]; then
     mkdir -p $dir/sorttmp
 fi
 
-awk -v OFS="\t" '{print $1, $2, $6, $7, $11}' $validP.UNI >$validP.UNI.binPair
+# awk -v OFS="\t" '{print $1, $2, $6, $7, $11}' $validP.UNI >$validP.UNI.binPair
 
 # Remove PCR duplicates based on alignment chrom + position
 sort -k2,2V -k3,3n -k7,7V -k8,8n -T $dir/sorttmp  $validP  | awk -v OFS="\t" 'BEGIN{c1=0;c2=0;s1=0;s2=0}(c1!=$2 || c2!=$7 || s1!=$3 || s2!=$8){print;c1=$2;c2=$7;s1=$3;s2=$8}' | sort -k1,1V -k2,2V -k6,6n -k7,7V -k11,11n -T $dir/sorttmp > $validI.nodup
