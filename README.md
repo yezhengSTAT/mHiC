@@ -11,7 +11,9 @@ mHi-C is short for **m**ulti-mapping strategy for **Hi-C** data in order to make
 ## mHi-C main procedures
 
 ### Step 0 - Pipeline caller [mhic_step0-6.sh]
-Caller for all the steps in mHi-C pipeline, starting from alignment to multi-reads alignment probability assignment. This is a demo script to run multiple steps at once. Parameters in the script should be customize it for you own use.
+Caller for all the steps in mHi-C pipeline, starting from raw data (fastq files) downloading to alignment and eventually assign alignment probability to multi-reads. Before digging into the details of the pipeline, mhic_step0-6.sh offers a complete demo run using small but real Hi-C data ([Plasmodium falciparum genome Trophozoites stage](https://noble.gs.washington.edu/proj/plasmo3d)). What you need to prepare is to install 1. BWA, 2. samtools, 3. python3 with corresponding modules required in each step, 4. set the path of $projectPath, $bwaDir, $samtoolsDir accordingly. Parameters in the script have been set for the demo data but can always be customize it for you own use.
+
+Now are you ready to try mHi-C? git clone this repository, as there are useful data and scripts under the bin/, and try the following command! All the steps 0 to 6 should be finished within 1 or 2 hours (for the demo) depending on your computing resources. :)
 
 #### 0.0 Usage
 
@@ -40,27 +42,35 @@ Default aligner is BWA but other aligner such as bowtie can also be used as long
 9. cutsite      : Restriction enzyme cutting site. For example, "AAGCTAGCTT" for HindIII and "GATCGATC" for MboI.
 10. seqLength   : [Optional] The minimum read length for chimeric reads. >=25 is enforced by mHiC.
 11. summaryFile : [Optional] Name for the alignment summary file. By default, "mHiC.summary" will be used as the summary file name.
+12. saveFiles	: [Optional] Save the intermediate files. 1: save; 0: do not save. By default, it will be 1.
 ```
 
 #### 1.2 Usage
 
 ```
-name="IMR90_rep1"
-ref="/projects/ReferenceGenome/hg19.fasta"
-bwaDir="/projects/Softwares/bwa-0.5.9"
-samtoolsDir="/projects/Softwares/samtools-1.3"
-fastqDir="/projects/fastqFiles"
-resultsDir="/projects/IMR90"
-bin="/projects/bin"
-cutsite="AAGCTAGCTT" # for HindIII
+name="TROPHOZOITES"
+ref="$projectPath/bin/PlasmoDB-9.0_Pfalciparum3D7_Genome.fasta"
+bwaDir="$projectPath/Softwares/bwa-0.5.9" ## need downloading bwa software
+samtoolsDir="$projectPath/Softwares/samtools-1.3" ## need dowloading samtools software
+fastqDir="$projectPath/fastqFiles"
+resultsDir="$projectPath/$name"
+bin="$projectPath/bin"
+nCores=8
+cutsite="GATCGATC" ## for MboI ##"AAGCTAGCTT" for HindIII
 seqLength=25
-resolution=40000
+resolution=10000
+saveFiles=0
 
 ## compile cutsite to trim chimeric reads
 g++ -std=c++0x -o $bin/cutsite_trimming_mHiC $bin/cutsite_trimming_mHiC.cpp
 
-bash s1_bwaAlignment.sh "$name" "$ref" "$bwaDir" "$samtoolsDir" "$fastqDir" "$resultsDir/s1" "$bin" 8 "$cutsite" "$seqLength" "$resultsDir/mHiC.summary_w${resolution}_s1"
+## generate reference genome bwa index
+$bwaDir/bwa index $ref
 
+
+## alignment
+echo "Start step 1 - alignment!"
+bash s1_bwaAlignment.sh "$name" "$ref" "$bwaDir" "$samtoolsDir" "$fastqDir" "$resultsDir/s1" "$bin" "$nCores" "$cutsite" "$seqLength" "$resultsDir/mHiC.summary_w${resolution}_s1" "$saveFiles"
 ```
 
 ### Step 2 - Read ends pairing [s2_joinEnd.py] 
@@ -87,11 +97,12 @@ verbose		(-v/--verbose)		    : [Optional] Verbose. Default is true.
 
 #### 2.2 Usage
 ```
-name="IMR90_rep1"
-resultsDir="/projects/IMR90"
-resolution=40000
+name="TROPHOZOITES"
+resultsDir="$projectPath/$name"
+resolution=10000
 
-python s2_joinEnd.py -r1 ${resultsDir}/s1/${name}_1.sam -r2 ${resultsDir}/s1/${name}_2.sam -o ${resultsDir}/s2/${name}.sam -sf $resultsDir/mHiC.summary_w${resolution}_s2
+echo "Start step 2 - joining read ends!"
+python3 s2_joinEnd.py -r1 ${resultsDir}/s1/${name}_1.sam -r2 ${resultsDir}/s1/${name}_2.sam -o ${resultsDir}/s2/${name}.sam -sf $resultsDir/mHiC.summary_w${resolution}_s2
 ```
 
 
@@ -124,15 +135,17 @@ verbose		(-v/--verbose)		: [Optional] Verbose. Default is true.
 #### 3.2 Usage
 
 ```
-name="IMR90_rep1"
-resultsDir="/projects/IMR90"
-refrag="HindIII_resfrag_hg19.bed" #restriction fragment file
-resolution=40000
+name="TROPHOZOITES"
+resultsDir="$projectPath/$name"
+bin="$projectPath/bin"
+refrag="MboI_resfrag.bed" #restriction fragment file
+resolution=10000
 lowerBound=$((resolution * 2))
 refragL=50 #$((seqLength * 2))
 refragU=500
 
-python s3_categorizePairs.py -f ${bin}/${refrag} -r ${resultsDir}/s2/${name}.sam -o ${resultsDir}/s3 -l $refragL -u $refragU -d $lowerBound -m "window" -b $resolution -sf $resultsDir/mHiC.summary_w${resolution}_s3
+echo "Start step 3 - categorize read pairs!"
+python3 s3_categorizePairs.py -f ${bin}/${refrag} -r ${resultsDir}/s2/${name}.sam -o ${resultsDir}/s3 -l $refragL -u $refragU -d $lowerBound -m "window" -b $resolution -sf $resultsDir/mHiC.summary_w${resolution}_s3
 ```
 
 #### 3.3 Input file - Restriction enzyme fragment (BED file)
@@ -161,31 +174,38 @@ Remove the PCR duplicates and bin the genome by fixed window size.
 #### 4.1 Arguments
 
 ```
-1. validP	    : Path to the valid read pairs obtained from step3.
-2. validI	    : Path to the output non-duplicated valid interactions. Users can take this chance to rename the interaction files otherwise users can set it to be the same as validP
-3. bin		    : Path to the bin folder where ICE normalization script can be found.
-4. mappFile	    : Path to the mappability file.
-5. minMapp	    : Minimum mappability of the regions considered. Default is 0.5.
-6. minCount	    : Minimum contact counts of the bin pairs considered. Default is 1.
-7. maxInter	    : Maximum iteraction of ICE to normalize contact matrix. Default is 100.
-8. summaryFile	    : Summary file name. Default is rmDuplicates.summary.
+1. validP		: Path to the valid read pairs obtained from step3.
+2. validI	      	: Path to the output non-duplicated valid interactions. Users can take this chance to rename the interaction files otherwise users can set it to be the same as validP
+3. bin		      	: Path to the bin folder where ICE normalization script can be found.
+4. mappFile	      	: Path to the mappability file.
+5. minMapp	      	: Minimum mappability of the regions considered. Default is 0.5.
+6. minCount	      	: Minimum contact counts of the bin pairs considered. Default is 1.
+7. maxInter	      	: Maximum iteraction of ICE to normalize contact matrix. Default is 100.
+8. summaryFile	      	: Summary file name. Default is rmDuplicates.summary.
+9. splitByChrom	      	: To remove duplicates, sorting by chrom + position + strand is needed. For high resolution and deeply sequenced Hi-C data, it may require extremely large memory for the sorting procedure. Spliting by chromosome will alleviate the memory demand and can potentially be much faster. 1: split; 0: not split. By default, it will be 1.
+10. saveSplitContact  	: Save the splitting interactions files. 1: save; 0: do not save. By default it will be 0.
+11. chrList		: An array of chromosome number. For example for human, it can be ($(seq 1 22) X Y).
 
 ```
 #### 4.2 Usage
 
 ```
-name="IMR90_rep1"
-resultsDir="/projects/IMR90"
-resolution=40000
-bin="/projects/bin"
-validP="${resultsDir}/s3/w${resolution}/${name}.validPairs"
-validI="${resultsDir}/s4/w${resolution}/${name}.validPairs"
-mappFile="${bin}/human-hg19.HindIII.w${resolution}"
+name="TROPHOZOITES"
+resultsDir="$projectPath/$name"
+resolution=10000
+bin="$projectPath/bin"
+validP="${resultsDir}/s3/${name}.validPairs"
+validI="${resultsDir}/s4/${name}.validPairs"
+mappFile="${bin}/pfal3D7.MboI.w${resolution}"
 minMap=0.5 #min mappability threshold
 minCount=1 #min contact counts allowed
 maxIter=150
+splitByChrom=1
+saveSplitContact=0
+chrList=$(seq 1 14)
 
-bash s4_bin.sh "$validP" "$validI" "$bin" "$mappFile" "$minMap" "$minCount" "$maxIter" "$resultsDir/mHiC.summary_w${resolution}_s4"
+echo "Start step 4 - duplicates removal and binning!"
+bash s4_bin.sh "$validP" "$validI" "$bin" "$mappFile" "$minMap" "$minCount" "$maxIter" "$resultsDir/mHiC.summary_w${resolution}_s4" "$splitByChrom" "$saveSplitContact" "${chrList[@]}"
 ```
 
 #### 4.3 Input file - mappability file
@@ -231,14 +251,15 @@ priorName	(-l/--lib)		    : Name of file that save the prior quantifying the rel
 #### 5.2 Usage
 
 ```
-name="IMR90_rep1"
-resultsDir="/projects/IMR90"
-resolution=40000
-validI="${resultsDir}/s4/w${resolution}/${name}.validPairs"
-splineBin=200
+name="TROPHOZOITES"
+resultsDir="$projectPath/$name"
+resolution=10000
+validI="${resultsDir}/s4/${name}.validPairs"
+splineBin=150
 priorName="uniPrior"
 
-python s5_prior.py -f $validI.binPair.Marginal -i $validI.binPairCount.uni.afterICE -o ${resultsDir}/s5 -b $splineBin -l $priorName
+echo "Starts step 5 - prior construction based on uni-reads only!"
+python3 s5_prior.py -f $validI.binPair.Marginal -i $validI.binPairCount.uni.afterICE -o ${resultsDir}/s5 -b $splineBin -l $priorName
 ```
 
 ### Step 6 - mHi-C assigning multi-reads [s6_em.py]
@@ -264,19 +285,19 @@ verbose		(-v/--verbose)		: [Optional] Verbose. Default is true.
 #### 6.2 Usage
 
 ```
-name="IMR90_rep1"
-resultsDir="/projects/IMR90"
-resolution=40000
-prior="${resultsDir}/s5/s5_w${resolution}_splineResults"
+name="TROPHOZOITES"
+resultsDir="$projectPath/$name"
+resolution=10000
+prior="${resultsDir}/s5/splineResults"
 multi="${resultsDir}/s4/${name}.validPairs.MULTI.binPair.multi"
 multiKeys="$resultsDir/s4/${name}.validPairs.MULTI.binPair.multiKeys" 
 uni="$resultsDir/s4/${name}.validPairs.binPairCount.uni"
 filename="${name}.validPairs.binPair.multi"
 threshold=0.5
 
+echo "Starts step 6 - assign probability to multi-reads potential alignment positions !"
 awk -v OFS="_" '{print $2, $3, $4, $5}' $multi | sort -u >$multiKeys
-
-python s6_em.py -p $prior -u $uni -m $multi -mk $multiKeys -t $threshold -o "${resultsDir}/s6" -f $filename
+python3 s6_em.py -p $prior -u $uni -m $multi -mk $multiKeys -t $threshold -o "${resultsDir}/s6" -f $filename
 ```
 
 #### 6.3 Input file - Uni-reads bin-pair contact count file
@@ -324,6 +345,22 @@ HWI-ST216_0283:7:2206:17601:52440       chr10   60000   chrX    104900000
 HWI-ST216_0283:7:2102:4063:178540       chr10   60000   chrX    115100000
 ```
 
+#### mHi-C outcome: probability assignment to all the potential alignment positions for each multi-reads
+```
+HWI-ST279:283:D1ACDACXX:8:1101:1345:16298       chr11   1955000 chr4    1155000 0.04448364631169624
+HWI-ST279:283:D1ACDACXX:8:1101:1345:16298       chr11   45000   chr11   1955000 0.5951475510998886
+HWI-ST279:283:D1ACDACXX:8:1101:1345:16298       chr7    35000   chr11   1955000 0.36036880258841525
+HWI-ST279:283:D1ACDACXX:8:1101:1345:54161       chr8    455000  chr4    945000  0.2559876018501595
+HWI-ST279:283:D1ACDACXX:8:1101:1345:54161       chr8    455000  chr4    965000  0.7440123981498405
+HWI-ST279:283:D1ACDACXX:8:1101:1352:20204       chr10   1655000 chr9    15000   0.1673993168315729
+HWI-ST279:283:D1ACDACXX:8:1101:1352:20204       chr3    1045000 chr9    15000   0.14897657449274118
+HWI-ST279:283:D1ACDACXX:8:1101:1352:20204       chr9    15000   chr8    1445000 0.6836241086756858
+HWI-ST279:283:D1ACDACXX:8:1101:1359:95492       chr10   1615000 chr4    945000  0.21741198606305115
+HWI-ST279:283:D1ACDACXX:8:1101:1359:95492       chr10   1615000 chr4    955000  0.01489117401888037
+HWI-ST279:283:D1ACDACXX:8:1101:1359:95492       chr6    35000   chr4    945000  0.7337329633658197
+HWI-ST279:283:D1ACDACXX:8:1101:1359:95492       chr6    35000   chr4    955000  0.033963876552248806
+```
+
 ### Step 7 - Significant contacts detection [Fit-Hi-C]
 
 Fit-Hi-C pipeline: https://github.com/ay-lab/fithic
@@ -333,5 +370,6 @@ Other necessary scripts and supplementary data can be found there.
 
 * cutsite_trimming_mHiC.cpp : utilized to trim unmapped reads to save chimeric reads.
 * ICE-with-sparseMatrix.py : scripts for ICE normalization.
-* human-hg19.HindIII.w300000, human-hg19.HindIII.w40000, hg19.MboI.w5000 : mappability file for different restriction enzyme and resolution.
-* HindIII_resfrag_hg19.bed : restriction enzyme file.
+* PlasmoDB-9.0_Pfalciparum3D7_Genome.fasta: reference genome.
+* pfal3D7.MboI.w10000, human-hg19.HindIII.w300000, human-hg19.HindIII.w40000, hg19.MboI.w5000 : mappability file for different restriction enzyme and resolution.
+* MboI_resfrag.bed, HindIII_resfrag_hg19.bed : restriction enzyme file.

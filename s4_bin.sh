@@ -3,15 +3,7 @@
 ## mHi-C
 ## Author: Ye Zheng
 ## Contact: yezheng@stat.wisc.edu
-
-'''
-Script to remove duplicates and binning.
-ICE normalization of uni-reads are conducted in preparation
-for prior building in step 5.
-
-'''
-
-
+## Update: May 2018
 
 ################################################################
 # step 4 remove duplicates among Valid Interactions and binning#
@@ -20,40 +12,104 @@ validP=$1
 validI=$2
 bin=$3
 dir=${validI%/*}
-mappability=$4
+mappFile=$4
 minMap=${5:-0.5}
 minCount=${6:-1}
-maxIter=${7:-100}
+maxIter=${7:-350}
 summaryFile=${8:-""}
+splitByChrom=${9:-1}
+saveSplitContact=${10:-0};shift 10
+chrList=("$@")
+
+## **********************
+## 4.1 remove duplicates
+## **********************
 
 if [ ! -d $dir/sorttmp ]; then
     mkdir -p $dir/sorttmp
 fi
 
-awk -v OFS="\t" '{print $1, $2, $6, $7, $11}' $validP.UNI >$validP.UNI.binPair
+if [ "$splitByChrom" -eq 1 ];then
+    ## split validPairs
+    for c in ${chrList[@]} ##$(seq 1 22) X Y
+    do
+	chrom=chr$c
+	for type in UNI MULTI
+	do
+	    ## remove PCR duplicates based on alignment chrom + position
+	    awk -v chrom="$chrom" -v type="$type" '$2 == chrom && $13 == type {print $0}' $validP |  sort -k2,2V -k3,3n -k4 -k7,7V -k8,8n -k9 -k1 -T $dir/sorttmp | awk -v OFS="\t" 'BEGIN{c1=0;c2=0;p1=0;p2=0;s1=0;s2=0;}(c1!=$2 || c2!=$7 || p1!=$3 || p2!=$8 || s1!=$4 || s2!=$9 ){print;c1=$2;c2=$7;p1=$3;p2=$8;s1=$4;s2=$9}' >$validI.$chrom.$type
+	done
 
-# Remove PCR duplicates based on alignment chrom + position
-sort -k2,2V -k3,3n -k7,7V -k8,8n -T $dir/sorttmp  $validP  | awk -v OFS="\t" 'BEGIN{c1=0;c2=0;s1=0;s2=0}(c1!=$2 || c2!=$7 || s1!=$3 || s2!=$8){print;c1=$2;c2=$7;s1=$3;s2=$8}' | sort -k1,1V -k2,2V -k6,6n -k7,7V -k11,11n -T $dir/sorttmp > $validI.nodup
+	## check if Multi have duplicate alignment with Uni
+	awk 'FNR==NR{a[$2$3$4$7$8$9];next};($2$3$4$7$8$9 in a)' $validI.$chrom.UNI $validI.$chrom.MULTI | awk '{print $1}' >$validI.$chrom.MultiRMdupList
+
+    done
+
+    ## merge all the multi-reads that overlap with uni-reads
+    cat $validI.*.MultiRMdupList | sort | uniq >$validI.MultiRMdupList
+    cat $validI.*.MULTI >$validI.MULTI
+    ## get non-duplicated uni-reads binPairs
+    cat $validI.*.UNI >$validI.UNI
+
+    if [ "$saveSplitContact" -eq "0" ]; then
+	rm -rf $validI.*.UNI
+	rm -rf $validI.*.MULTI
+	rm -rf $validI.*.MultiRMdupList
+    fi
+    
+else
+    for type in UNI MULTI
+    do
+	awk -v type="$type" '$13 == type {print $0}' $validP |  sort -k2,2V -k3,3n -k4 -k7,7V -k8,8n -k9 -k1 -T $dir/sorttmp | awk -v OFS="\t" 'BEGIN{c1=0;c2=0;p1=0;p2=0;s1=0;s2=0;}(c1!=$2 || c2!=$7 || p1!=$3 || p2!=$8 || s1!=$4 || s2!=$9 ){print;c1=$2;c2=$7;p1=$3;p2=$8;s1=$4;s2=$9}' >$validI.$type
+    done
+
+    ## check if Multi have duplicate alignment with Uni
+    awk 'FNR==NR{a[$2$3$4$7$8$9];next};($2$3$4$7$8$9 in a)' $validI.UNI $validI.MULTI | awk '{print $1}' >$validI.MultiRMdupList
+
+fi
+
+## remove all the multi-reads with all their potential alignment positions if they overlap with uni-reads
+awk 'FNR==NR{a[$1];next};!($1 in a)' $validI.MultiRMdupList $validI.MULTI >$validI.MULTI.noOverlapUni
+rm -rf $validI.MULTI
+mv $validI.MULTI.noOverlapUni $validI.MULTI
+
+awk -v OFS="\t" '{print $1, $2, $6, $7, $11}' $validI.UNI >$validI.UNI.binPair
 
 rm -rf $dir/sorttmp
 
 
-# Take only the read ID and bin pairs information, then remove bin pair duplicates of one read pair
-awk -v OFS="\t" 'BEGIN{q=0;c1=0;c2=0;b1=0;b2=0}(q!=$1 || c1!=$2 || c2!=$7 || b1!=$6 || b2!=$11){print $1, $2, $6, $7, $11;q=$1;c1=$2;c2=$7;b1=$6;b2=$11}' $validI.nodup | awk -v OFS="\t" '{split($2, chr1, "chr"); split($4, chr2, "chr"); if(chr1[2] > chr2[2]) {print $1, $4, $5, $2, $3} else {print $0}}' > $validI.nodup.binPair
+
+## *************************************************
+## 4.2 Multi-reads can be reduced into uni-binPair
+## if all the candiates alignment positions fall
+## within on bin.
+## *************************************************
+
+if [ ! -d $dir/sorttmp ]; then
+    mkdir -p $dir/sorttmp
+fi
+
+## take only the read ID and bin pairs information, then remove bin pair duplicates of one read pair
+awk -v OFS="\t" 'BEGIN{q=0;c1=0;c2=0;b1=0;b2=0}(q!=$1 || c1!=$2 || c2!=$7 || b1!=$6 || b2!=$11){print $1, $2, $6, $7, $11;q=$1;c1=$2;c2=$7;b1=$6;b2=$11}' $validI.MULTI >$validI.MULTI.binPair
 
 
-# Split valid interaction bin pair files into unique bin pair and multiple bin pair file
-awk '{print $1}' $validI.nodup.binPair | sort | uniq -c >$validI.nodup.binPair.uniMultiSummary
+## Split multi-reads valid interaction bin pair files into unique bin pair and multiple bin pair file
+awk '{print $1}' $validI.MULTI.binPair | sort -T $dir/sorttmp  | uniq -c | awk '$1 >1 {print $2}' >$validI.MULTI.binPair.multiList
 
-awk '$1 >1 {print $2}' $validI.nodup.binPair.uniMultiSummary >$validI.nodup.binPair.multiList
+rm -rf $dir/sorttmp
+mkdir $dir/sorttmp
 
-awk 'FNR==NR{a[$1];next};!($1 in a)' $validI.nodup.binPair.multiList $validI.nodup.binPair >$validI.nodup.binPair.uni
 
-awk 'FNR==NR{a[$1];next};($1 in a)' $validI.nodup.binPair.multiList $validI.nodup.binPair >$validI.nodup.binPair.multi
+awk 'FNR==NR{a[$1];next};!($1 in a)' $validI.MULTI.binPair.multiList $validI.MULTI.binPair >$validI.MULTI.binPair.uni ##multi-reads reduced to uni-binPairs
 
-# Uni bin pair count
-awk '{print $2, $3, $4, $5}' $validI.nodup.binPair.uni | sort | uniq -c | awk -v OFS="\t" '{print $2, $3, $4, $5, $1}' | sort -k1,1V -k2,2n -k3,3V -k4,4n >$validI.binPairCount.uni
+awk 'FNR==NR{a[$1];next};($1 in a)' $validI.MULTI.binPair.multiList $validI.MULTI.binPair | sort -T $dir/sorttmp -k1,1V >$validI.MULTI.binPair.multi ## multi-reads fall into multi-binPairs
 
+## uni bin pair count: Uni-binPair = Uni-reads binPair + Multi-reads reduced into uni-binPair
+cat $validI.UNI.binPair $validI.MULTI.binPair.uni >$validI.binPair.uni
+awk '{print $2, $3, $4, $5}' $validI.binPair.uni | sort -T $dir/sorttmp | uniq -c | awk -v OFS="\t" '{print $2, $3, $4, $5, $1}' | sort -k1,1V -k2,2n -k3,3V -k4,4n -T $dir/sorttmp >$validI.binPairCount.uni
+
+rm -rf $dir/sorttmp
+mkdir $dir/sorttmp
 
 
 # Summary of removing duplicates
@@ -62,39 +118,42 @@ if [ "${#summaryFile}" -eq "0" ]; then
 fi
 echo -e "\n" >>$summaryFile
 echo -e "\n" >>$summaryFile
-echo -e "Step: Remove duplicates alignments" >>$summaryFile
+echo -e "Step: Remove duplicates alignment pairs and binning" >>$summaryFile
 
-validI_all=$(cat $validP | wc -l)
-validI_nodup=$(cat $validI.nodup | wc -l)
-validI_rmdup=$(( validI_all - validI_nodup ))
-validI_nodupBin=$(cat $validI.nodup.binPair | wc -l)
-readCount_uniBin=$(cat $validI.nodup.binPair.uni | wc -l)
-readCount_multiBin=$(cat $validI.nodup.binPair.multiList | wc -l)
+validI_nodup_uni=$(cat $validI.UNI.binPair | wc -l)
+validI_nodup_multi=$(cat $validI.MULTI | wc -l)
+readCount_uniBin=$(cat $validI.binPair.uni | wc -l)
+readCount_multiBin=$(cat $validI.MULTI.binPair.multiList | wc -l)
 
 
 echo -e "Valid interaction pairs including uni-read pairs and all kinds of multi-mapping possible pairs:" >>$summaryFile
-echo -e "  Valid interaction pairs count:\t"$validI_all >>$summaryFile
-echo -e "    Valid interaction pairs without duplicates:\t"$validI_nodup >>$summaryFile
-echo -e "    Valid interaction pairs removed duplicates:\t"$validI_rmdup >>$summaryFile
-echo -e "  Valid interaction bin pairs without duplicates:\t"$validI_nodupBin >>$summaryFile
-echo -e "Valid read pairs count:" >>$summaryFile
-echo -e "  Valid read pair count with unique bin pair:\t"$readCount_uniBin >>$summaryFile
+echo -e "  Valid interaction uni-mapping pairs noduplicates count:\t"$validI_nodup_uni >>$summaryFile
+echo -e "  Valid interaction multi-mapping all possible pairs noduplicates count:\t"$validI_nodup_multi >>$summaryFile
+echo -e "After binning, bin pair by read ID count:" >>$summaryFile
+echo -e "  Valid read pair count with unique bin pair including uniquely determined multi-mapping read pairs:\t"$readCount_uniBin >>$summaryFile
 echo -e "  Valid read pair count with multiple possible bin pairs:\t"$readCount_multiBin >>$summaryFile
+
+## **********************************************
+## 4.3 Uni-binPair contact matrix normalization.
+## In preparation for step 5 prior building.
+## **********************************************
 
 # Exclude low count contacts
 if [ "$minCount" -gt "1" ];then
 
-    awk -v minC=$minCount -v OFS="\t" '$5>=minC {print $0}' $validI.binPairCount.uni | sort -k1,1V -k2,2n -k3,3V -k4,4n >$validI.binPairCount.uni.minCount$minCount
+    awk -v minC=$minCount -v OFS="\t" '$5>=minC {print $0}' $validI.binPairCount.uni | sort -k1,1V -k2,2n -k3,3V -k4,4n -T $dir/sorttmp  >$validI.binPairCount.uni.minCount$minCount
 
     # ICE normalization with filtering low mappability regions
-    python $bin/ICE-with-sparseMatrix.py $validI.binPairCount.uni.minCount$minCount $bin/$mappFile l1 $validI.binPairCount.uni.afterICE $minMap $maxIter
+    python $bin/ICE-with-sparseMatrix.py $validI.binPairCount.uni.minCount$minCount $mappFile l1 $validI.binPairCount.uni.afterICE $minMap $maxIter
 else
-    # ICE normalization with filtering low mappability regions
-    python $bin/ICE-with-sparseMatrix.py $validI.binPairCount.uni $bin/$mappFile l1 $validI.binPairCount.uni.afterICE $minMap $maxIter
+    # ICE normalization without filtering low mappability regions
+    python $bin/ICE-with-sparseMatrix.py $validI.binPairCount.uni $mappFile l1 $validI.binPairCount.uni.afterICE $minMap $maxIter
 fi
 
-# Uni bin marginal pair
+## Uni bin marginal pair
 awk '{print $1, $2}' $validI.binPairCount.uni.afterICE >$validI.marginal1
 awk '{print $3, $4}' $validI.binPairCount.uni.afterICE >$validI.marginal2
 cat $validI.marginal1 $validI.marginal2 | sort -k1,1V -k2,2n | awk '!a[$0]++' >$validI.binPair.Marginal
 rm -rf $validI.marginal*
+rm -rf $dir/sorttmp
+

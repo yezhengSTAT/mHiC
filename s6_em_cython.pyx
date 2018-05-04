@@ -298,8 +298,8 @@ def main(str priorPath, str multiFilePath, str multiKeysPath, str uniFilePath, s
     cdef int maxIter, selectChangeThre
     cdef double diffThre
 
-    maxIter = 3
-    diffThre = 0.5
+    maxIter = 500
+    diffThre = 0.01
     selectChangeThre = 1
 
     

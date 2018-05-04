@@ -4,117 +4,153 @@
 ## Author: Ye Zheng
 ## Contact: yezheng@stat.wisc.edu
 
-'''
-Script to call each step of mHi-C
-April 2016
-'''
+#######################################################
+## Script to call each step of mHi-C
+## Take ring stage of Plasmodium falciparum for example
+## Update May 2018
+#######################################################
+
+projectPath="/p/keles/yezheng/volumeA/mHiC/mHiC_demo" ## path to save all the raw data, intermediate files and outputs.
+
 ## ************************************************
 ## step 0 - Download raw data - Example shown here.
 ## ************************************************
 
 echo "Start step 0 - downloading!"
 
-id="SRR1658591"
-sraDir="/projects/sratoolkit.2.8.2-1-centos_linux64"
-path="/projects/fastqFiles"
-mkdir -p $path
+## Download Plasmodium falciparum - TROPHOZOITES fastq files for both ends
+id="TROPHOZOITES"
+fastqPath="$projectPath/fastqFiles"
 
-## tar -zxvf sratoolkit.tar.gz
-wget -r ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX764/SRX764954/SRR1658591/SRR1658591.sra -O $path/$id.sra
-$sraDir/bin/fastq-dump -F --split-files $path/$id.sra -O $path
+if [ ! -d "$fastqPath" ]; then
+    mkdir -p $fastqPath
+fi
+wget -r "ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM1215nnn/GSM1215593/suppl/GSM1215593_trimmedAndFiltered-TROPHOZOITES-XL-AGGG-L2_1.fastq.gz" -O $fastqPath/$id\_1.fastq.gz
+wget -r "ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM1215nnn/GSM1215593/suppl/GSM1215593_trimmedAndFiltered-TROPHOZOITES-XL-AGGG-L2_2.fastq.gz" -O $fastqPath/$id\_2.fastq.gz
+
+gunzip $fastqPath/$id\_1.fastq.gz
+gunzip $fastqPath/$id\_2.fastq.gz
+
+## remove end suffix to have matching id between two ends
+mv $fastqPath/$id\_1.fastq $fastqPath/$id\_1.tmp.fastq
+awk '{print $1}' $fastqPath/$id\_1.tmp.fastq > $fastqPath/$id\_1.fastq
+mv $fastqPath/$id\_2.fastq $fastqPath/$id\_2.tmp.fastq
+awk '{print $1}' $fastqPath/$id\_2.tmp.fastq > $fastqPath/$id\_2.fastq
+rm -rf $fastqPath/$id\_*tmp.fastq
+
+
+
+## Download IMR90
+# id="SRR1658591"
+# sraDir="/projects/sratoolkit.2.8.2-1-centos_linux64"
+# path="/projects/fastqFiles"
+# mkdir -p $path
+
+# ## tar -zxvf sratoolkit.tar.gz
+# wget -r ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX764/SRX764954/SRR1658591/SRR1658591.sra -O $path/$id.sra
+# $sraDir/bin/fastq-dump -F --split-files $path/$id.sra -O $path
 
 ## step 1-3: Can be run in parallel.
 
 ## ******************
 ## step 1: Alignment
 ## ******************
-name="IMR90_rep1"
-ref="/projects/ReferenceGenome/hg19.fasta"
-bwaDir="/projects/Softwares/bwa-0.5.9"
-samtoolsDir="/projects/Softwares/samtools-1.3"
-fastqDir="/projects/fastqFiles"
-resultsDir="/projects/IMR90"
-bin="/projects/bin"
-cutsite="AAGCTAGCTT" # for HindIII
+name="TROPHOZOITES"
+ref="$projectPath/bin/PlasmoDB-9.0_Pfalciparum3D7_Genome.fasta"
+bwaDir="$projectPath/Softwares/bwa-0.5.9" ## need downloading bwa software
+samtoolsDir="$projectPath/Softwares/samtools-1.3" ## need dowloading samtools software
+fastqDir="$projectPath/fastqFiles"
+resultsDir="$projectPath/$name"
+bin="$projectPath/bin"
+nCores=8
+cutsite="GATCGATC" ## for MboI ##"AAGCTAGCTT" for HindIII
 seqLength=25
-resolution=40000
-
+resolution=10000
+saveFiles=0
 ## compile cutsite to trim chimeric reads
 g++ -std=c++0x -o $bin/cutsite_trimming_mHiC $bin/cutsite_trimming_mHiC.cpp
 
+## generate reference genome bwa index
+$bwaDir/bwa index $ref
+
+## alignment
 echo "Start step 1 - alignment!"
-bash s1_bwaAlignment.sh "$name" "$ref" "$bwaDir" "$samtoolsDir" "$fastqDir" "$resultsDir/s1" "$bin" 8 "$cutsite" "$seqLength" "$resultsDir/mHiC.summary_w${resolution}_s1"
+bash s1_bwaAlignment.sh "$name" "$ref" "$bwaDir" "$samtoolsDir" "$fastqDir" "$resultsDir/s1" "$bin" "$nCores" "$cutsite" "$seqLength" "$resultsDir/mHiC.summary_w${resolution}_s1" "$saveFiles"
 
 
 ## **************************
 ## step 2: Read ends pairing
 ## **************************
-name="IMR90_rep1"
-resultsDir="/projects/IMR90"
-resolution=40000
+name="TROPHOZOITES"
+resultsDir="$projectPath/$name"
+resolution=10000
 
 echo "Start step 2 - joining read ends!"
-python s2_joinEnd.py -r1 ${resultsDir}/s1/${name}_1.sam -r2 ${resultsDir}/s1/${name}_2.sam -o ${resultsDir}/s2/${name}.sam -sf $resultsDir/mHiC.summary_w${resolution}_s2
+python3 s2_joinEnd.py -r1 ${resultsDir}/s1/${name}_1.sam -r2 ${resultsDir}/s1/${name}_2.sam -o ${resultsDir}/s2/${name}.sam -sf $resultsDir/mHiC.summary_w${resolution}_s2
 
 
 ## *********************************
 ## step 3: Valid fragment filtering
 ## *********************************
-name="IMR90_rep1"
-resultsDir="/projects/IMR90"
-refrag="HindIII_resfrag_hg19.bed" #restriction fragment file
-resolution=40000
+name="TROPHOZOITES"
+resultsDir="$projectPath/$name"
+bin="$projectPath/bin"
+refrag="MboI_resfrag.bed" #restriction fragment file
+resolution=10000
 lowerBound=$((resolution * 2))
 refragL=50 #$((seqLength * 2))
 refragU=500
 
 echo "Start step 3 - categorize read pairs!"
-python s3_categorizePairs.py -f ${bin}/${refrag} -r ${resultsDir}/s2/${name}.sam -o ${resultsDir}/s3 -l $refragL -u $refragU -d $lowerBound -m "window" -b $resolution -sf $resultsDir/mHiC.summary_w${resolution}_s3
+python3 s3_categorizePairs.py -f ${bin}/${refrag} -r ${resultsDir}/s2/${name}.sam -o ${resultsDir}/s3 -l $refragL -u $refragU -d $lowerBound -m "window" -b $resolution -sf $resultsDir/mHiC.summary_w${resolution}_s3
 
-## In case, chrM is not needed in downstream analysis
+# ## In case, chrM is not needed in downstream analysis
 # awk -v OFS="\t" '$2 != "chrM" && $7!="chrM" {print $0}' $validP >$validP.noChrM
 # rm -rf $validP
 # mv $validP.noChrM $validP
 
+
 ## ***************************************
 ## step 4 - Remove duplicates and binning.
 ## ***************************************
-name="IMR90_rep1"
-resultsDir="/projects/IMR90"
-resolution=40000
-bin="/projects/bin"
-validP="${resultsDir}/s3/w${resolution}/${name}.validPairs"
-validI="${resultsDir}/s4/w${resolution}/${name}.validPairs"
-mappFile="${bin}/human-hg19.HindIII.w${resolution}"
+name="TROPHOZOITES"
+resultsDir="$projectPath/$name"
+resolution=10000
+bin="$projectPath/bin"
+validP="${resultsDir}/s3/${name}.validPairs"
+validI="${resultsDir}/s4/${name}.validPairs"
+mappFile="${bin}/pfal3D7.MboI.w${resolution}"
 minMap=0.5 #min mappability threshold
 minCount=1 #min contact counts allowed
 maxIter=150
+splitByChrom=1
+saveSplitContact=0
+chrList=$(seq 1 14)
 
 echo "Start step 4 - duplicates removal and binning!"
-bash s4_bin.sh "$validP" "$validI" "$bin" "$mappFile" "$minMap" "$minCount" "$maxIter" "$resultsDir/mHiC.summary_w${resolution}_s4"
-
+bash s4_bin.sh "$validP" "$validI" "$bin" "$mappFile" "$minMap" "$minCount" "$maxIter" "$resultsDir/mHiC.summary_w${resolution}_s4" "$splitByChrom" "$saveSplitContact" "${chrList[@]}"
 
 ## **********************
 ## step 5 - Build prior.
 ## **********************
-name="IMR90_rep1"
-resultsDir="/projects/IMR90"
-resolution=40000
-validI="${resultsDir}/s4/w${resolution}/${name}.validPairs"
-splineBin=200
+name="TROPHOZOITES"
+resultsDir="$projectPath/$name"
+resolution=10000
+validI="${resultsDir}/s4/${name}.validPairs"
+splineBin=150
 priorName="uniPrior"
 
 echo "Starts step 5 - prior construction based on uni-reads only!"
-python s5_prior.py -f $validI.binPair.Marginal -i $validI.binPairCount.uni.afterICE -o ${resultsDir}/s5 -b $splineBin -l $priorName
+python3 s5_prior.py -f $validI.binPair.Marginal -i $validI.binPairCount.uni.afterICE -o ${resultsDir}/s5 -b $splineBin -l $priorName
 
 
 ## ************************************************************************************
 ## step 6 - Generative model to assign probability to multi-reads potential alignments.
 ## ************************************************************************************
-name="IMR90_rep1"
-resultsDir="/projects/IMR90"
-resolution=40000
-prior="${resultsDir}/s5/s5_w${resolution}_splineResults"
+name="TROPHOZOITES"
+resultsDir="$projectPath/$name"
+resolution=10000
+prior="${resultsDir}/s5/splineResults"
 multi="${resultsDir}/s4/${name}.validPairs.MULTI.binPair.multi"
 multiKeys="$resultsDir/s4/${name}.validPairs.MULTI.binPair.multiKeys" 
 uni="$resultsDir/s4/${name}.validPairs.binPairCount.uni"
@@ -123,4 +159,4 @@ threshold=0.5
 
 echo "Starts step 6 - assign probability to multi-reads potential alignment positions !"
 awk -v OFS="_" '{print $2, $3, $4, $5}' $multi | sort -u >$multiKeys
-python s6_em.py -p $prior -u $uni -m $multi -mk $multiKeys -t $threshold -o "${resultsDir}/s6" -f $filename
+python3 s6_em.py -p $prior -u $uni -m $multi -mk $multiKeys -t $threshold -o "${resultsDir}/s6" -f $filename

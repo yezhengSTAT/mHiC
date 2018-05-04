@@ -16,6 +16,13 @@ core=$8
 cutsite=$9 #AAGCTAGCTT for HindIII
 seqLength=${10:-25} #>=25 enforced by mHiC
 summaryFile=${11:-"mHiC.summary"}
+saveFiles=${12:-"1"}
+
+## refresh summary file
+if [ -e "$summaryFile" ]; then
+    rm -rf $summaryFile
+    touch $summaryFile
+fi
 
 ## min length for chimeric reads is enforced to be 25bp
 if [ "$seqLength" -lt "25" ]; then
@@ -81,6 +88,8 @@ echo -e "Second stage alignment aligned multi-reads 1: "$chimericMulti1 >>$summa
 echo -e "Second stage alignment aligned multi-reads 2: "$chimericMulti2 >>$summaryFile
 
 #Remove redundant files
-rm -rf $resultsDir/*sai
-rm -rf $resultsDir/*unmapped*
-rm -rf $resultsDir/*raw*
+if [ "$saveFiles" -eq "0" ]; then
+    rm -rf $resultsDir/*sai
+    rm -rf $resultsDir/*unmapped*
+    rm -rf $resultsDir/*raw*
+fi

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 ## mHiC
-## Modified based on Fit-hi-c.py programmed by Ferhat Ay
+## Modified based on Fit-hi-c.py programmed by Ferhat Ay and Arya Kaul
 ## Modified to only fit the spline under null hypothesis: Ye Zheng
 ## March 2nd, 2017
 ## Contact: yezheng@stat.wisc.edu
@@ -24,12 +24,11 @@ from optparse import OptionParser
 import scipy.special as scsp
 import bisect
 # R dependencies
-import readline
-import rpy2.robjects as ro
-from rpy2.robjects.packages import importr
-fdrtool = importr('fdrtool')
+# import readline
+# import rpy2.robjects as ro
+# from rpy2.robjects.packages import importr
+# fdrtool = importr('fdrtool')
 import gzip
-
 
 from pylab import *
 from random import *
@@ -37,7 +36,10 @@ from scipy.stats.mstats import mquantiles
 import myStats
 import myUtils
 
-print("Finish importing!")
+##NEW
+from sklearn.isotonic import IsotonicRegression
+
+## print("Finish importing!")
 ##### global variables shared by functions ######
 chrList=[] # list of all chromosomes
 listOfMappableFrags=[] # list of all mappable fragments
@@ -104,8 +106,6 @@ def main():
 					  action="store_true", dest="visual", help="OPTIONAL: use this flag for generating plots. DEFAULT is False.")
 	parser.add_option("-q", "--quiet",
 					  action="store_false", dest="visual", help="OPTIONAL: use this flag for omitting plots. DEFAULT behavior." )
-	parser.add_option("-V", "--version", action="store_true", dest="version", 
-					  help=versionStr)
 	parser.set_defaults(visual=False, noOfBins=100, distLowThres=-1, distUpThres=-1, mappabilityThreshold=0, noOfPasses=1, discBinsize=5000,libname="",biasfile='none', version=False)
 	(options, args) = parser.parse_args()
 	print(args)
@@ -203,7 +203,6 @@ def main():
 	sys.stderr.write("\nExecution of fit-hic completed successfully. \n\n") 
 	return # from main 
 
-
 def fit_Spline(x,y,yerr,infilename,sortedInteractions,biasDic,figname,passNo):
 	sys.stderr.write("\nFit a univariate spline to the probability means\n")
 	sys.stderr.write("------------------------------------------------------------------------------------\n")
@@ -237,22 +236,22 @@ def fit_Spline(x,y,yerr,infilename,sortedInteractions,biasDic,figname,passNo):
 	#print len(splineX)
 	splineY=ius(splineX)
 
-	# R vector format
-	rSplineX=ro.FloatVector(splineX)
-	rSplineY=ro.FloatVector(splineY)
-	rMonoReg=ro.r['monoreg']
-	# do the antitonic regression
-	allRres=rMonoReg(rSplineX,rSplineY,type="antitonic")
-	rNewSplineY=allRres[3]
-	# convert data back to Python format
-	newSplineY=[]
-	diff=[]
-	diffX=[]
-	for i in range(len(rNewSplineY)):
-		newSplineY.append(rNewSplineY[i])
-		if (splineY[i]-newSplineY[i]) > 0:
-			diff.append(splineY[i]-newSplineY[i])
-			diffX.append(splineX[i])
+	# # R vector format
+	# rSplineX=ro.FloatVector(splineX)
+	# rSplineY=ro.FloatVector(splineY)
+	# rMonoReg=ro.r['monoreg']
+	# # do the antitonic regression
+	# allRres=rMonoReg(rSplineX,rSplineY,type="antitonic")
+	# rNewSplineY=allRres[3]
+	# # convert data back to Python format
+	# newSplineY=[]
+	# diff=[]
+	# diffX=[]
+	# for i in range(len(rNewSplineY)):
+	# 	newSplineY.append(rNewSplineY[i])
+	# 	if (splineY[i]-newSplineY[i]) > 0:
+	# 		diff.append(splineY[i]-newSplineY[i])
+	# 		diffX.append(splineX[i])
 
 	# END for
 	#print len(splineX)
@@ -260,6 +259,12 @@ def fit_Spline(x,y,yerr,infilename,sortedInteractions,biasDic,figname,passNo):
 	# print(splineX)
 	# print("y in function:")
 	# print(newSplineY)
+
+	####NEW
+	## Ye - Dec 2017
+	##
+	ir = IsotonicRegression(increasing=False)
+	newSplineY = ir.fit_transform(splineX, splineY)
         
 	######
 	# - Ye

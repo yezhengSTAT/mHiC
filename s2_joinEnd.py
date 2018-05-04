@@ -30,13 +30,13 @@ def get_args():
     parser.add_argument('-v', '--verbose', help = '(Optional) Verbose. Default is true.', default = True)
 
     args = parser.parse_args()
-    if args.read1 is None or args.read2 is None or args.output is None:
+    if args.readEnd1 is None or args.readEnd2 is None or args.output is None:
         parser.print_help()
         sys.exit()
-    if not os.path.exists(args.read1):
+    if not os.path.exists(args.readEnd1):
         print("Single-ended read 1 file does not exist!")
         sys.exit()
-    if not os.path.exists(args.read2):
+    if not os.path.exists(args.readEnd2):
         print("Single-ended read 2 file does not exist!")
         sys.exit()
     if args.output is None:
@@ -140,8 +140,8 @@ if __name__ == "__main__":
 
     args = get_args()
     if args.verbose:
-        print("Read 1 file = ", args.read1)
-        print("Read 2 file = ", args.read2)
+        print("Read 1 file = ", args.readEnd1)
+        print("Read 2 file = ", args.readEnd2)
         print("Output file = ", args.output)
         print("Summary of alignment results = ", args.summary)
         print("Summary file path = ", args.summaryFile)
@@ -158,21 +158,21 @@ if __name__ == "__main__":
 
     if args.verbose:
         print("------------Begin joining ends from read 1 file and read 2 file------------")
-    with pysam.Samfile(args.read1, "rb") as read1, pysam.Samfile(args.read2, "rb") as read2:
+    with pysam.Samfile(args.readEnd1, "rb") as readEnd1, pysam.Samfile(args.readEnd2, "rb") as readEnd2:
 
         if args.output.endswith(".bam"):
-            outfile = pysam.AlignmentFile(args.output, "wb", template = read1)
+            outfile = pysam.AlignmentFile(args.output, "wb", template = readEnd1)
         elif args.output.endswith(".sam"):
-            outfile = pysam.AlignmentFile(args.output, "wh", template = read1)
+            outfile = pysam.AlignmentFile(args.output, "wh", template = readEnd1)
         else:
             print("Output file format should be either bam or sam.")
             sys.exit()
             
-        for r1, r2 in zip(read1.fetch(until_eof = True), read2.fetch(until_eof = True)):
+        for r1, r2 in zip(readEnd1.fetch(until_eof = True), readEnd2.fetch(until_eof = True)):
             total_count += 1
 
-            if total_count % 10000 == 0 and args.verbose:
-                print("## ", total_count)
+            if total_count % 1000000 == 0 and args.verbose:
+                print("# of reads processed: ", total_count)
 
             if r1.qname == r2.qname:
                 if r1.is_unmapped == True and r2.is_unmapped == True:
@@ -182,7 +182,7 @@ if __name__ == "__main__":
                     mapped_count += 1
                     if is_uniread(r1) == True and is_uniread(r2) == True:
                         uni_count += 1
-                        (r1, r2) = sam_flag(r1, r2, read1, read2)
+                        (r1, r2) = sam_flag(r1, r2, readEnd1, readEnd2)
                         outfile.write(r1)
                         outfile.write(r2)
                     elif is_lowQualMulti(r1) == True or is_lowQualMulti(r2) == True:
@@ -195,7 +195,7 @@ if __name__ == "__main__":
                         the rest aligned reads pair with at least one end having XA tag are multi-mapping read pairs.
                         """
                         multi_count += 1
-                        (r1, r2) = sam_flag(r1, r2, read1, read2)
+                        (r1, r2) = sam_flag(r1, r2, readEnd1, readEnd2)
                         outfile.write(r1)
                         outfile.write(r2)
 
@@ -225,8 +225,8 @@ if __name__ == "__main__":
         statSummary.write("    Total number of multi-mapping for at least one end of the read pairs and is of low quality:\t" + str(multi_lowqual_count) + "\n")
         statSummary.close()
 
-    read1.close()
-    read2.close()
+    readEnd1.close()
+    readEnd2.close()
     outfile.close()
         
         

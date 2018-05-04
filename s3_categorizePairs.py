@@ -78,11 +78,11 @@ def get_read_strand(read):
     return strand
 
 
-def isIntraChrom(read1, read2): 
-    '''                                                                                                                        
-    This function cites the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_f
-ragments.py) by Nicolas Servant, Eric Viara                                                                                    
+def isIntraChrom(read1, read2):
     '''
+    This function cites the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_fragments.py) by Nicolas Servant, Eric Viara
+    '''
+    
     """
     Return true is the reads pair is intrachromosomal
     
@@ -96,10 +96,10 @@ ragments.py) by Nicolas Servant, Eric Viara
 
 
 def get_read_pos(read):
-'''                                                                                                                        
-    This function cites the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_f
-ragments.py) by Nicolas Servant, Eric Viara                                                                                    
     '''
+    This function cites the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_fragments.py) by Nicolas Servant, Eric Viara
+    '''
+
     """
     Return the read position (zero-based) used for the intersection with
     the restriction fragment
@@ -127,31 +127,31 @@ ragments.py) by Nicolas Servant, Eric Viara
 
 
 def get_cis_dist(read1, read2):
-    '''                                                                                                                        
-    This function cites the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_f
-ragments.py) by Nicolas Servant, Eric Viara                                                                                    
     '''
-     """
-     Calculte the contact distance between two intrachromosomal reads
-     read1 : [AlignedRead]
-     read2 : [AlignedRead]
-     """
-     # Get oriented reads
-     ##r1, r2 = get_ordered_reads(read1, read2)
-     dist = None
-     if not r1.is_unmapped and not r2.is_unmapped:         
-         ## Contact distances can be calculated for intrachromosomal reads only
-         if isIntraChrom(read1, read2):
-             r1pos = get_read_pos(read1)
-             r2pos = get_read_pos(read2)
-             dist = abs(r1pos - r2pos)
-     return dist
-
-
+    This function cites the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_fragments.py) by Nicolas Servant, Eric Viara
+    '''
+    """
+    Calculte the contact distance between two intrachromosomal reads
+    read1 : [AlignedRead]
+    read2 : [AlignedRead]
+    """
+    # Get oriented reads
+    ##r1, r2 = get_ordered_reads(read1, read2)
+    dist = None
+    if not r1.is_unmapped and not r2.is_unmapped:         
+        ## Contact distances can be calculated for intrachromosomal reads only
+        if isIntraChrom(read1, read2):
+            r1pos = get_read_pos(read1)
+            r2pos = get_read_pos(read2)
+            dist = abs(r1pos - r2pos)
+            return dist
+        
+        
 def get_read_start(read):
-    '''                                                                                                                        
-    This function cites the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_fragments.py) by Nicolas Servant, Eric Viara                                                                                    
     '''
+    This function cites the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_fragments.py) by Nicolas Servant, Eric Viara
+    '''
+    
     """
     Return the 5' end of the read
     """
@@ -171,9 +171,8 @@ def get_read_start(read):
     return pos
 
 def get_ordered_reads(read1, read2):
-    '''                                                                                                                        
-    This function cites the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_f
-ragments.py) by Nicolas Servant, Eric Viara                                                                                    
+    '''
+    This function cites the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_fragments.py) by Nicolas Servant, Eric Viara
     '''
     """
     Reorient reads
@@ -202,9 +201,8 @@ ragments.py) by Nicolas Servant, Eric Viara
 
 
 def get_overlapping_restriction_fragment(resFrag, chrom, read):
-    '''                                                                                                                        
-    This function cites the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_f
-ragments.py) by Nicolas Servant, Eric Viara                                                                                    
+    '''
+    This function cites the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_fragments.py) by Nicolas Servant, Eric Viara
     '''
     """
     Intersect a given read with the set of restriction fragments
@@ -232,8 +230,8 @@ ragments.py) by Nicolas Servant, Eric Viara
         return None
 
 def load_restriction_fragment(in_file, minfragsize=None, maxfragsize=None, verbose=False):
-    '''                                                                                                                        
-    This function cites the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_fragments.py) by Nicolas Servant, Eric Viara                                                                                    
+    '''
+    This function cites the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_fragments.py) by Nicolas Servant, Eric Viara
     '''
     '''
     Function load_restriction_fragment cite the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_fragments.py) by Nicolas Servant, Eric Viara 
@@ -408,8 +406,8 @@ def build_resFragBin_tree(in_file, resolution = None, verbose = False):
             
 
 def are_contiguous_fragments(frag1, frag2, chr1, chr2):
-    '''                                                                                                                        
-    This function cites the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_fragments.py) by Nicolas Servant, Eric Viara                                                                                    
+    '''
+    This function cites the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_fragments.py) by Nicolas Servant, Eric Viara
     '''
     '''
     Compare fragment positions to check if they are contiguous
@@ -427,9 +425,8 @@ def are_contiguous_fragments(frag1, frag2, chr1, chr2):
             return ret
 
 def is_religation(read1, read2, frag1, frag2):
-
     '''
-    Function cite the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_fragments.py) by Nicolas Servant, Eric Viara 
+    This function cites the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_fragments.py) by Nicolas Servant, Eric Viara
     '''
     """
     Reads are expected to map adjacent fragments
@@ -711,9 +708,13 @@ if __name__ == "__main__":
                         end2_chrom = readFile.getrname(end2.tid)
                         end1_frag = get_overlapping_restriction_fragment(fragTree, end1_chrom, end1)
                         if end1_frag is None:
+                            interactionType = "DUMP"
                             break
 
-                        end2_frag = get_overlapping_restriction_fragment(fragTree, end2_chrom, end2)     
+                        end2_frag = get_overlapping_restriction_fragment(fragTree, end2_chrom, end2)
+                        if end2_frag is None:
+                            interactionType = "DUMP"
+                            break
                         # get interaction type, alignmenet position to fragment cutting site distance sum, and intrachromosal contact distance
                         if end1_frag is not None and end2_frag is not None:
                             interactionType = get_interaction_type(end1, end1_chrom, end1_frag, end2, end2_chrom, end2_frag, args.verbose)
