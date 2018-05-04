@@ -11,9 +11,9 @@ mHi-C is short for **m**ulti-mapping strategy for **Hi-C** data in order to make
 ## mHi-C main procedures
 
 ### Step 0 - Pipeline caller [mhic_step0-6.sh]
-Caller for all the steps in mHi-C pipeline, starting from raw data (fastq files) downloading to alignment and eventually assign alignment probability to multi-reads. Before digging into the details of the pipeline, mhic_step0-6.sh offers a complete demo run using small but real Hi-C data ([Plasmodium falciparum genome Trophozoites stage](https://noble.gs.washington.edu/proj/plasmo3d)). What you need to prepare is to install 1. BWA, 2. samtools, 3. python3 with corresponding modules required in each step, 4. set the path of $projectPath, $bwaDir, $samtoolsDir accordingly. Parameters in the script have been set for the demo data but can always be customize it for you own use.
+Caller for all the steps in mHi-C pipeline, starting from raw data (fastq files) downloading to alignment and eventually to assign alignment probability to multi-reads. Before digging into the details of the pipeline, mhic_step0-6.sh offers a complete demo run using small but real Hi-C data ([Plasmodium falciparum genome Trophozoites stage](https://noble.gs.washington.edu/proj/plasmo3d)). What you need to prepare is to install 1. BWA, 2. samtools, 3. python3 with corresponding modules required in each step, 4. set the path of $projectPath, $bwaDir, $samtoolsDir accordingly. Parameters in the script have been set for the demo data but can always be customized for you own use.
 
-Now are you ready to try mHi-C? git clone this repository, as there are useful data and scripts under the bin/, and try the following command! All the steps 0 to 6 should be finished within 1 or 2 hours (for the demo) depending on your computing resources. :)
+Now are you ready to try mHi-C? git clone this repository, as there are useful data and scripts under the bin/, and try the following single command! All the steps, 0 to 6, should be finished within 1 or 2 hours (for the demo) depending on your computing resources. :)
 
 #### 0.0 Usage
 
