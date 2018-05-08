@@ -187,7 +187,7 @@ Remove the PCR duplicates and bin the genome by fixed window size.
 10. chromSizeFile	: Chromosome size file required by KR method. It can be set to "" or any other value if ICE or None is selected for normalization method.
 11. sparsePerc		: Percentage of sparse regions, i.e., regions that have 0 or low interactions. It is required by KR normalization approach and can be set to "" or any other value if ICE or None is utilized for normalization. Default is 5 for 5%.
 12. summaryFile	      	: Summary file name. Default is rmDuplicates.summary.
-13. splitByChrom	      	: To remove duplicates, sorting by chrom + position + strand is needed. For high resolution and deeply sequenced Hi-C data, it may require extremely large memory for the sorting procedure. Spliting by chromosome will alleviate the memory demand and can potentially be much faster. 1: split; 0: not split. By default, it will be 1.
+13. splitByChrom	: To remove duplicates, sorting by chrom + position + strand is needed. For high resolution and deeply sequenced Hi-C data, it may require extremely large memory for the sorting procedure. Spliting by chromosome will alleviate the memory demand and can potentially be much faster. 1: split; 0: not split. By default, it will be 1.
 14. saveSplitContact  	: Save the splitting interactions files. 1: save; 0: do not save. By default it will be 0.
 15. chrList		: An array of chromosome number. For example for human, it can be ($(seq 1 22) X Y).
 
