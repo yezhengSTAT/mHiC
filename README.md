@@ -148,7 +148,8 @@ echo "Start step 3 - categorize read pairs!"
 python3 s3_categorizePairs.py -f ${bin}/${refrag} -r ${resultsDir}/s2/${name}.sam -o ${resultsDir}/s3 -l $refragL -u $refragU -d $lowerBound -m "window" -b $resolution -sf $resultsDir/mHiC.summary_w${resolution}_s3
 ```
 
-#### 3.3 Input file - Restriction enzyme fragment (BED file)
+#### 3.3 Input file - Restriction enzyme fragment (BED file), i.e, digest genome
+HiCPro provides scripts and detailed way to generate such files ([http://nservant.github.io/HiC-Pro/UTILS.html#digest-genome-py]{http://nservant.github.io/HiC-Pro/UTILS.html#digest-genome-py}).
 ```
 chr1    0       16007   HIC_chr1_1      0       +
 chr1    16007   24571   HIC_chr1_2      0       +
@@ -177,14 +178,18 @@ Remove the PCR duplicates and bin the genome by fixed window size.
 1. validP		: Path to the valid read pairs obtained from step3.
 2. validI	      	: Path to the output non-duplicated valid interactions. Users can take this chance to rename the interaction files otherwise users can set it to be the same as validP
 3. bin		      	: Path to the bin folder where ICE normalization script can be found.
-4. mappFile	      	: Path to the mappability file.
-5. minMapp	      	: Minimum mappability of the regions considered. Default is 0.5.
-6. minCount	      	: Minimum contact counts of the bin pairs considered. Default is 1.
-7. maxInter	      	: Maximum iteraction of ICE to normalize contact matrix. Default is 100.
-8. summaryFile	      	: Summary file name. Default is rmDuplicates.summary.
-9. splitByChrom	      	: To remove duplicates, sorting by chrom + position + strand is needed. For high resolution and deeply sequenced Hi-C data, it may require extremely large memory for the sorting procedure. Spliting by chromosome will alleviate the memory demand and can potentially be much faster. 1: split; 0: not split. By default, it will be 1.
-10. saveSplitContact  	: Save the splitting interactions files. 1: save; 0: do not save. By default it will be 0.
-11. chrList		: An array of chromosome number. For example for human, it can be ($(seq 1 22) X Y).
+4. resolution		: Binning resolution. For example 10000.
+5. minCount	      	: Minimum contact counts of the bin pairs considered. Default is 1.
+6. normMethod		: Contact matrix normalization method. Options are ICE, KR and None, i.e., not implement any normalization procedure on contact matrix. See more in 4.3 for discussion of the normalization methods. By defualt, ICE is utilized.
+7. mappFile	      	: Path to the mappability file required by ICE method. It can be set to "" or any value if KR or None is select for normalization method.
+8. minMapp	      	: Minimum mappability of the regions considered which is required by ICE method. It can be set to "" or any other value if KR or None is select for normalization method. Default is 0.5.
+9. maxInter	      	: Maximum iteraction of ICE to normalize contact matrix required by ICE method. It can be set to "" or any other value if KR or None is select for normalization method. Default is 100.
+10. chromSizeFile	: Chromosome size file required by KR method. It can be set to "" or any other value if ICE or None is selected for normalization method.
+11. sparsePerc		: Percentage of sparse regions, i.e., regions that have 0 or low interactions. It is required by KR normalization approach and can be set to "" or any other value if ICE or None is utilized for normalization. Default is 5 for 5%.
+12. summaryFile	      	: Summary file name. Default is rmDuplicates.summary.
+13. splitByChrom	      	: To remove duplicates, sorting by chrom + position + strand is needed. For high resolution and deeply sequenced Hi-C data, it may require extremely large memory for the sorting procedure. Spliting by chromosome will alleviate the memory demand and can potentially be much faster. 1: split; 0: not split. By default, it will be 1.
+14. saveSplitContact  	: Save the splitting interactions files. 1: save; 0: do not save. By default it will be 0.
+15. chrList		: An array of chromosome number. For example for human, it can be ($(seq 1 22) X Y).
 
 ```
 #### 4.2 Usage
@@ -196,21 +201,37 @@ resolution=10000
 bin="$projectPath/bin"
 validP="${resultsDir}/s3/${name}.validPairs"
 validI="${resultsDir}/s4/${name}.validPairs"
-mappFile="${bin}/pfal3D7.MboI.w${resolution}"
-minMap=0.5 #min mappability threshold
 minCount=1 #min contact counts allowed
-maxIter=150
+
+normMethod="KR" #1. "ICE" 2. "KR" 3."None"
+ICEmappFile="${bin}/pfal3D7.MboI.w${resolution}" ## mappability file for ICE method
+ICEminMap=0.5 ## min mappability threshold for ICE method
+ICEmaxIter=150 ## maximum number of iteration for ICE method
+KRchromSizeFile=${bin}/plasmodium.chrom.sizes ## chromosome size file for KR method
+KRsparsePerc=5 ## remove *% of sparse regions for KR method
 splitByChrom=1
 saveSplitContact=0
 chrList=$(seq 1 14)
 
+
 echo "Start step 4 - duplicates removal and binning!"
-bash s4_bin.sh "$validP" "$validI" "$bin" "$mappFile" "$minMap" "$minCount" "$maxIter" "$resultsDir/mHiC.summary_w${resolution}_s4" "$splitByChrom" "$saveSplitContact" "${chrList[@]}"
+bash s4_bin.sh "$validP" "$validI" "$bin" "$resolution" "$minCount" "$normMethod" "$ICEmappFile" "$ICEminMap" "$ICEmaxIter" "$KRchromSizeFile" "$KRsparsePerc" "$resultsDir/mHiC.summary_w${resolution}_s4" "$splitByChrom" "$saveSplitContact" "${chrList[@]}"
 ```
+#### 4.3 Normalization methods
 
-#### 4.3 Input file - mappability file
+* ICE	   : Iterative Correction and Eigenvector decomposition algorithm. (Imakaev, Maxim, et al. "Iterative correction of Hi-C data reveals hallmarks of chromosome organization." Nature methods 9.10 (2012): 999.)
+             ICE offers function to remove extreme low mappability regions therefore mappability for each bin is needed. The format of mappability file is given in 4.4 and it can be generated by GEM-mappability ([guide]{https://wiki.bits.vib.be/index.php/Create_a_mappability_track}).
+
+* KR   	   : Knight-Ruiz normalization algorithm. (Knight, Philip A., and Daniel Ruiz. "A fast algorithm for matrix balancing." IMA Journal of Numerical Analysis 33.3 (2013): 1029-1047.)
+             KR method is much faster for high resolution (e.g. 1kb, 5kb) and deeply sequenced samples.
+
+* None	   : The fastest approach as no normalization is implemented and the prior will be built on the raw contact matrix.
+  	     Utilizing normalized contact matrix will lead to a better prior constructed in step 5 and will end up having a stronger power to distinguish multi-reads potential alignment positions.
+
+#### 4.4 Input file - mappability file
 
 ```
+chrom	midPoint	anything	mappabilityValue	anything
 chr1    20000   10      0.003775        0.526966666667
 chr1    60000   8       0.01415 0.358675
 chr1    100000  19      0.013   0.3898
@@ -257,9 +278,16 @@ resolution=10000
 validI="${resultsDir}/s4/${name}.validPairs"
 splineBin=150
 priorName="uniPrior"
+normMethod="KR" #"ICE" ##"KR"
+
+if [ "$normMethod" != "None" ] && [ "$normMethod" != "" ] && [ "$normMethod" != "NONE" ] && [ "$normMethod" != "none" ]; then
+    contactFile=$validI.binPairCount.uni.${normMethod}norm
+else
+    contactFile=$validI.binPairCount.uni
+fi
 
 echo "Starts step 5 - prior construction based on uni-reads only!"
-python3 s5_prior.py -f $validI.binPair.Marginal -i $validI.binPairCount.uni.afterICE -o ${resultsDir}/s5 -b $splineBin -l $priorName
+python3 s5_prior.py -f $validI.binPair.Marginal -i $contactFile  -o ${resultsDir}/s5 -b $splineBin -l $priorName
 ```
 
 ### Step 6 - mHi-C assigning multi-reads [s6_em.py]

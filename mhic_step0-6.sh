@@ -57,8 +57,8 @@ rm -rf $fastqPath/$id\_*tmp.fastq
 ## ******************
 name="TROPHOZOITES"
 ref="$projectPath/bin/PlasmoDB-9.0_Pfalciparum3D7_Genome.fasta"
-bwaDir="$projectPath/Softwares/bwa-0.5.9" ## need downloading bwa software
-samtoolsDir="$projectPath/Softwares/samtools-1.3" ## need dowloading samtools software
+bwaDir="/p/keles/yezheng/volumeA/Softwares/bwa-0.5.9" ##"$projectPath/Softwares/bwa-0.5.9" ## need downloading bwa software
+samtoolsDir="/p/keles/yezheng/volumeA/Softwares/samtools" ## "$projectPath/Softwares/samtools-1.3" ## need dowloading samtools software
 fastqDir="$projectPath/fastqFiles"
 resultsDir="$projectPath/$name"
 bin="$projectPath/bin"
@@ -119,16 +119,20 @@ resolution=10000
 bin="$projectPath/bin"
 validP="${resultsDir}/s3/${name}.validPairs"
 validI="${resultsDir}/s4/${name}.validPairs"
-mappFile="${bin}/pfal3D7.MboI.w${resolution}"
-minMap=0.5 #min mappability threshold
 minCount=1 #min contact counts allowed
-maxIter=150
+
+normMethod="KR" #1. "ICE" 2. "KR" 3."None"
+ICEmappFile="${bin}/pfal3D7.MboI.w${resolution}" ## mappability file for ICE method
+ICEminMap=0.5 ## min mappability threshold for ICE method
+ICEmaxIter=150 ## maximum number of iteration for ICE method
+KRchromSizeFile=${bin}/plasmodium.chrom.sizes ## chromosome size file for KR method
+KRsparsePerc=5 ## remove *% of sparse regions for KR method
 splitByChrom=1
 saveSplitContact=0
 chrList=$(seq 1 14)
 
 echo "Start step 4 - duplicates removal and binning!"
-bash s4_bin.sh "$validP" "$validI" "$bin" "$mappFile" "$minMap" "$minCount" "$maxIter" "$resultsDir/mHiC.summary_w${resolution}_s4" "$splitByChrom" "$saveSplitContact" "${chrList[@]}"
+bash s4_bin.sh "$validP" "$validI" "$bin" "$resolution" "$minCount" "$normMethod" "$ICEmappFile" "$ICEminMap" "$ICEmaxIter" "$KRchromSizeFile" "$KRsparsePerc" "$resultsDir/mHiC.summary_w${resolution}_s4" "$splitByChrom" "$saveSplitContact" "${chrList[@]}"
 
 ## **********************
 ## step 5 - Build prior.
@@ -139,9 +143,16 @@ resolution=10000
 validI="${resultsDir}/s4/${name}.validPairs"
 splineBin=150
 priorName="uniPrior"
+normMethod="KR" #"ICE" ##"KR"
+
+if [ "$normMethod" != "None" ] && [ "$normMethod" != "" ] && [ "$normMethod" != "NONE" ] && [ "$normMethod" != "none" ]; then
+    contactFile=$validI.binPairCount.uni.${normMethod}norm
+else
+    contactFile=$validI.binPairCount.uni
+fi
 
 echo "Starts step 5 - prior construction based on uni-reads only!"
-python3 s5_prior.py -f $validI.binPair.Marginal -i $validI.binPairCount.uni.afterICE -o ${resultsDir}/s5 -b $splineBin -l $priorName
+python3 s5_prior.py -f $validI.binPair.Marginal -i $contactFile  -o ${resultsDir}/s5 -b $splineBin -l $priorName
 
 
 ## ************************************************************************************
