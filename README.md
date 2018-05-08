@@ -397,7 +397,8 @@ Fit-Hi-C pipeline: https://github.com/ay-lab/fithic
 Other necessary scripts and supplementary data can be found there. 
 
 * cutsite_trimming_mHiC.cpp : utilized to trim unmapped reads to save chimeric reads.
-* ICE-with-sparseMatrix.py : scripts for ICE normalization.
+* ICE-with-sparseMatrix.py : script for ICE normalization.
+* KR_norm_mHiC.py : script for KR normalization.
 * PlasmoDB-9.0_Pfalciparum3D7_Genome.fasta: reference genome.
 * pfal3D7.MboI.w10000, human-hg19.HindIII.w300000, human-hg19.HindIII.w40000, hg19.MboI.w5000 : mappability file for different restriction enzyme and resolution.
 * MboI_resfrag.bed, HindIII_resfrag_hg19.bed : restriction enzyme file.
