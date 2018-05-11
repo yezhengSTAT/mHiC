@@ -43,11 +43,17 @@ if [ ! -d $dir/sorttmp ]; then
     mkdir -p $dir/sorttmp
 fi
 
+number='^[0-9]+$'
 if [ "$splitByChrom" -eq 1 ];then
     ## split validPairs
     for c in ${chrList[@]} ##$(seq 1 22) X Y
     do
-	chrom=chr$c
+	if [[ $c =~ $number ]]; then
+	    chrom="chr"$c
+	else
+	    chrom=$c
+	fi
+	    
 	for type in UNI MULTI
 	do
 	    ## remove PCR duplicates based on alignment chrom + position
