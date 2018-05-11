@@ -47,7 +47,7 @@ do
     # step1.2 - filter get aligned sam & unmapped sam
     echo "Step1.2 - Filter and get unmapped alignment sam file."
     ## Filter out the unmapped for future chimeric reads rescuing.
-    $samtoolsDir/samtools view -f 4  $resultsDir/$name\_$i.sam >$resultsDir/$name\_unmapped_$i.sam
+    $samtoolsDir/samtools view -h -f 4  $resultsDir/$name\_$i.sam >$resultsDir/$name\_unmapped_$i.sam
     mv $resultsDir/$name\_$i.sam $resultsDir/$name\_$i\_raw.sam
     
     # step1.3 - trim and filter unmapped
