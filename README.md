@@ -40,10 +40,10 @@ Default aligner is BWA but other aligner such as bowtie can also be used as long
 6. resultsDir   : Path to the output results including the intermediate files. 
 7. bin          : Path to the bin folder where cutsite_trimming_mHiC.cpp can be found.
 8. core         : Number of threads for parallel alignment.
-9. summaryFile : [Optional] Name for the alignment summary file. By default, "mHiC.summary" will be used as the summary file name.
+9. summaryFile	: [Optional] Name for the alignment summary file. By default, "mHiC.summary" will be used as the summary file name.
 10. saveFiles	: [Optional] Save the intermediate files. 1: save; 0: do not save. By default, it will be 1.
 11. seqLength   : [Optional] The minimum read length for chimeric reads. >=25 is enforced by mHiC.
-12. cutsite      : Restriction enzyme cutting site. This is for rescuing chimeric reads, namely reads that span the restriction enzyme cutting site.
+12. cutsite     : Restriction enzyme cutting site. This is for rescuing chimeric reads, namely reads that span the restriction enzyme cutting site.
    		  For example, "AAGCTAGCTT" for HindIII and "GATCGATC" for MboI. If multiple cutters are utilized, they can be listed in an array: seqLength=("AAGCTAGCTT" "GATCGATC" "...").
 		  If multiple cutting sites occur within one read, the shortest trimmed reads will be kept.
 		  If you do not want to rescue the chimeric reads, simply set it to be 0: cutsite=0.
