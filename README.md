@@ -31,7 +31,8 @@ Default aligner is BWA but other aligner such as bowtie can also be used as long
 #### 1.1 Arguments
 
 ```
-1. name         : Name of the input fastq file. Hi-C reads are paired-end reads stored in a paired fastq files, for example, IMR90_primaryReplicate_1.fastq and IMR90_primaryReplicate_2.fastq. The name should be "IMR90_primaryReplicate".
+1. name         : Name of the input fastq file. Hi-C reads are paired-end reads stored in a paired fastq files.
+   		  For example, IMR90_primaryReplicate_1.fastq and IMR90_primaryReplicate_2.fastq. The name should be "IMR90_primaryReplicate".
 2. ref          : Reference genome file including the path to it. For example, "/projects/ReferenceGenome/PlasmoDB-9.0_Pfalciparum3D7_Genome.fasta".
 3. bwaDir       : Path to BWA aligner. For example, "/projects/Softwares/bwa-0.5.9".
 4. samtoolsDir  : Path to samtools. For example, "/projects/Softwares/samtools-1.3".
@@ -39,7 +40,10 @@ Default aligner is BWA but other aligner such as bowtie can also be used as long
 6. resultsDir   : Path to the output results including the intermediate files. 
 7. bin          : Path to the bin folder where cutsite_trimming_mHiC.cpp can be found.
 8. core         : Number of threads for parallel alignment.
-9. cutsite      : Restriction enzyme cutting site. For example, "AAGCTAGCTT" for HindIII and "GATCGATC" for MboI.
+9. cutsite      : Restriction enzyme cutting site. This is for rescuing chimeric reads, namely reads that span the restriction enzyme cutting site.
+   		  For example, "AAGCTAGCTT" for HindIII and "GATCGATC" for MboI. If multiple cutters are utilized, they can be listed in an array: seqLength=("AAGCTAGCTT" "GATCGATC" "...").
+		  If multiple cutting sites occur within one read, the shortest trimmed reads will be kept.
+		  If you do not want to rescue the chimeric reads, simply set it to be 0: cutsite=0.
 10. seqLength   : [Optional] The minimum read length for chimeric reads. >=25 is enforced by mHiC.
 11. summaryFile : [Optional] Name for the alignment summary file. By default, "mHiC.summary" will be used as the summary file name.
 12. saveFiles	: [Optional] Save the intermediate files. 1: save; 0: do not save. By default, it will be 1.
@@ -122,11 +126,14 @@ This step is to ensure valid read pairs are passed on to downstream analysis whi
 fragment	(-f/--fragment)		: Restriction Enzyme(RE) fragment file.
 read		(-r/--read)		: Paired-ended read alignment file from step 2.
 outdir		(-o/--outdir)		: Output directory to save category results.
-lower		(-l/--lower)		: Lower bound of the read pair distances summation from read end alignment position to its assigned RE fragment cutting site. Default value is None indicating no restriction. Recommended 50.
-upper		(-u/--upper)		: Upper bound of the read pair distances summation from read end alignment position to its assigned RE fragment cutting site. Default value is None indicating no restriction. Recommended 500.
+lower		(-l/--lower)		: Lower bound of the read pair distances summation from read end alignment position to its assigned RE fragment cutting site.
+					  Default value is None indicating no restriction. Recommended 50.
+upper		(-u/--upper)		: Upper bound of the read pair distances summation from read end alignment position to its assigned RE fragment cutting site.
+					  Default value is None indicating no restriction. Recommended 500.
 distance	(-d/--distance)		: Minimum distance between intrachromosomal read pair alignments positions. Default value is None indicating no restriction. Recommended 20k or two times the resolution.
 binMethod	(-m/--method)		: Binning methods: by fixed number of window size, i.e. window, or fixed number of RE fragment, i.e. fragment. By default, binning by window is utilized.
-resolution	(-b/--bin)		: Binning resolution. If binning by fixed number of window size, it can be 10000 or any other suitable bin size. If binning by fixed number of RE fragment, it can be 10 representing 10RE fragments or other suitable bin size.
+resolution	(-b/--bin)		: Binning resolution. If binning by fixed number of window size, it can be 10000 or any other suitable bin size.
+					  If binning by fixed number of RE fragment, it can be 10 representing 10RE fragments or other suitable bin size.
 summary		(-s/--summary)		: [Optional] Summarize the categories of read pairs. Default is true.
 summaryFile	(-sf/--summaryFile)	: [Optional] Path to the summary file including the summary file name. Default is alignedFileName.readCategorySummary.
 verbose		(-v/--verbose)		: [Optional] Verbose. Default is true.
@@ -180,16 +187,23 @@ Remove the PCR duplicates and bin the genome by fixed window size.
 3. bin		      	: Path to the bin folder where ICE normalization script can be found.
 4. resolution		: Binning resolution. For example 10000.
 5. minCount	      	: Minimum contact counts of the bin pairs considered. Default is 1.
-6. normMethod		: Contact matrix normalization method. Options are ICE, KR and None, i.e., not implement any normalization procedure on contact matrix. See more in 4.3 for discussion of the normalization methods. By defualt, ICE is utilized.
+6. normMethod		: Contact matrix normalization method. Options are ICE, KR and None, i.e., not implement any normalization procedure on contact matrix.
+   			  See more in 4.3 for discussion of the normalization methods. By defualt, ICE is utilized.
 7. mappFile	      	: Path to the mappability file required by ICE method. It can be set to "" or any value if KR or None is select for normalization method.
 8. minMapp	      	: Minimum mappability of the regions considered which is required by ICE method. It can be set to "" or any other value if KR or None is select for normalization method. Default is 0.5.
 9. maxInter	      	: Maximum iteraction of ICE to normalize contact matrix required by ICE method. It can be set to "" or any other value if KR or None is select for normalization method. Default is 100.
 10. chromSizeFile	: Chromosome size file required by KR method. It can be set to "" or any other value if ICE or None is selected for normalization method.
-11. sparsePerc		: Percentage of sparse regions, i.e., regions that have 0 or low interactions. It is required by KR normalization approach and can be set to "" or any other value if ICE or None is utilized for normalization. Default is 5 for 5%.
+11. sparsePerc		: Percentage of sparse regions, i.e., regions that have 0 or low interactions. It is required by KR normalization approach.
+    			  In other words, can be set to "" or any other value if ICE or None is utilized for normalization. Default is 5 for 5%.
 12. summaryFile	      	: Summary file name. Default is rmDuplicates.summary.
-13. splitByChrom	: To remove duplicates, sorting by chrom + position + strand is needed. For high resolution and deeply sequenced Hi-C data, it may require extremely large memory for the sorting procedure. Spliting by chromosome will alleviate the memory demand and can potentially be much faster. For smaller genome or lower resolution, splitting by chromosome is actually not necessary. 1: split; 0: not split. By default, it will be 1.
+13. splitByChrom	: To remove duplicates, sorting by chrom + position + strand is needed. For high resolution and deeply sequenced Hi-C data, it may require extremely large memory for the sorting procedure.
+    			  Spliting by chromosome will alleviate the memory demand and can potentially be much faster. For smaller genome or lower resolution, splitting by chromosome is actually not necessary.
+			  1: split; 0: not split. By default, it will be 1.
 14. saveSplitContact  	: Save the splitting interactions files. 1: save; 0: do not save. By default it will be 0.
-15. chrList		: An array of chromosome number. For example for human, it can be ($(seq 1 22) X Y). If the chromosomes start with "chr", you can just put in the array of chromosome number, such as chrList=(1 2 3) or chrList=($(seq 1 22) X Y). If not, the prefix and chromosome number should be both given, such as chrList=(chromosome1 chromosome2 chromosome3) or it can be generated by chrList=(chromosome{1..22}). Such chromosome names should be consistent with those in reference genome in step1 (alignment) and the chromosome size file for KR normalization ($chromSizeFile).
+15. chrList		: An array of chromosome number. For example for human, it can be ($(seq 1 22) X Y).
+    			  If the chromosomes start with "chr", you can just put in the array of chromosome number, such as chrList=(1 2 3) or chrList=($(seq 1 22) X Y).
+			  If not, the prefix and chromosome number should be both given, such as chrList=(chromosome1 chromosome2 chromosome3) or it can be generated by chrList=(chromosome{1..22}).
+			  Such chromosome names should be consistent with those in reference genome in step1 (alignment) and the chromosome size file for KR normalization ($chromSizeFile).
 
 
 ```

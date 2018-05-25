@@ -63,10 +63,10 @@ fastqDir="$projectPath/fastqFiles"
 resultsDir="$projectPath/$name"
 bin="$projectPath/bin"
 nCores=8
-cutsite="GATCGATC" ## for MboI ##"AAGCTAGCTT" for HindIII
 seqLength=25
 resolution=10000
 saveFiles=0
+cutsite="GATCGATC" ## for MboI ##"AAGCTAGCTT" for HindIII or (GATCGATC ******** ********) for multiple cutters.
 ## compile cutsite to trim chimeric reads
 g++ -std=c++0x -o $bin/cutsite_trimming_mHiC $bin/cutsite_trimming_mHiC.cpp
 
@@ -75,7 +75,7 @@ $bwaDir/bwa index $ref
 
 ## alignment
 echo "Start step 1 - alignment!"
-bash s1_bwaAlignment.sh "$name" "$ref" "$bwaDir" "$samtoolsDir" "$fastqDir" "$resultsDir/s1" "$bin" "$nCores" "$cutsite" "$seqLength" "$resultsDir/mHiC.summary_w${resolution}_s1" "$saveFiles"
+bash s1_bwaAlignment.sh "$name" "$ref" "$bwaDir" "$samtoolsDir" "$fastqDir" "$resultsDir/s1" "$bin" "$nCores"  "$resultsDir/mHiC.summary_w${resolution}_s1" "$saveFiles" "$seqLength" "${cutsite[@]}"
 
 
 ## **************************
