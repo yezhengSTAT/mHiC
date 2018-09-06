@@ -525,14 +525,14 @@ def get_interaction_type(read1, read1_chrom, resfrag1, read2, read2_chrom, resfr
 
 def get_PE_fragment_size(read1, read2, resFrag1, resFrag2, interactionType):
     '''
-    Function cite the same function from Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_fragments.py) by Nicolas Servant, Eric Viara 
+    Function modified from function of Hi-C Pro (https://github.com/nservant/HiC-Pro/blob/master/scripts/mapped_2hic_fragments.py) by Nicolas Servant, Eric Viara 
     '''
     """
     Calculte the size of the DNA fragment library - (Ye: distances from read end alignment to its fragment cutting site.)
     read1 : [AlignedRead]
     read2 : [AlignedRead]
     resfrag1 = restrictin fragment overlapping the R1 read [interval]
-    resfrag1 = restrictin fragment overlapping the R1 read [interval]
+    resfrag2 = restrictin fragment overlapping the R2 read [interval]
     interactionType : Type of interaction from get_interaction_type() [str]
     """
 
@@ -548,7 +548,7 @@ def get_PE_fragment_size(read1, read2, resFrag1, resFrag2, interactionType):
             rfrag1 = resFrag1
             rfrag2 = resFrag2
 
-        ## In this case use the read 3' end !
+        ## In this case use the read 5' end !
         r1pos = get_read_start(r1)
         r2pos = get_read_start(r2)
 
@@ -557,14 +557,16 @@ def get_PE_fragment_size(read1, read2, resFrag1, resFrag2, interactionType):
         elif interactionType == "SC":
             fragmentsize = (r1pos - rfrag1.start) + (rfrag2.end - r2pos)
         elif interactionType == "VI":
-            if get_read_strand(r1) == "+":
-                dr1 = rfrag1.end - r1pos
-            else:
-                dr1 = r1pos - rfrag1.start
-            if get_read_strand(r2) == "+":
-                dr2 = rfrag2.end - r2pos
-            else:
-                dr2 = r2pos - rfrag2.start
+            dr1 = min(abs(rfrag1.end - r1pos), abs(r1pos - rfrag1.start))
+            dr2 = min(abs(rfrag2.end - r2pos), abs(r2pos - rfrag2.start))
+            # if get_read_strand(r1) == "+":
+            #     dr1 = rfrag1.end - r1pos
+            # else:
+            #     dr1 = r1pos - rfrag1.start
+            # if get_read_strand(r2) == "+":
+            #     dr2 = rfrag2.end - r2pos
+            # else:
+            #     dr2 = r2pos - rfrag2.start
             fragmentsize = dr2 + dr1
 
     return fragmentsize
@@ -767,10 +769,14 @@ if __name__ == "__main__":
                 # Identify fragment pair type: Uni or Multi
                 if len(fragPair) > 0:
                     fragPairUni = [list(x) for x in set(tuple(x) for x in fragPair)]
+                else:
+                    fragPairUni = []
 
                 # Identify bin pair type: Uni or Multi
                 if len(binPair) > 0:
                     binPairUni = [list(x) for x in set(tuple(x) for x in binPair)]
+                else:
+                    binPairUni = []
 
                 # Count
                 if len(m1) == 1 and len(m2) == 1: #uni-read pair

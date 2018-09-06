@@ -138,21 +138,21 @@ bash s4_bin.sh "$validP" "$validI" "$bin" "$resolution" "$minCount" "$normMethod
 ## step 5 - Build prior.
 ## **********************
 name="TROPHOZOITES"
+bin="$projectPath/bin"
 resultsDir="$projectPath/$name"
-resolution=10000
 validI="${resultsDir}/s4/${name}.validPairs"
+resolution=10000
 splineBin=150
+lower=10000
 priorName="uniPrior"
 normMethod="KR" #"ICE" ##"KR"
-
-if [ "$normMethod" != "None" ] && [ "$normMethod" != "" ] && [ "$normMethod" != "NONE" ] && [ "$normMethod" != "none" ]; then
-    contactFile=$validI.binPairCount.uni.${normMethod}norm
-else
-    contactFile=$validI.binPairCount.uni
-fi
+chromSizeFile=${bin}/plasmodium.chrom.sizes
+contactFile=$validI.binPairCount.uni
 
 echo "Starts step 5 - prior construction based on uni-reads only!"
-python3 s5_prior.py -f $validI.binPair.Marginal -i $contactFile  -o ${resultsDir}/s5 -b $splineBin -l $priorName
+python3 $bin/createFitHiCFragments-fixedsize.py --chrLens "$chromSizeFile" --resolution "$resolution" --outFile "$resultsDir/$name.uni.fragments.mHiC"
+
+python3 s5_prior.py -f ${resultsDir}/$name.uni.fragments.mHiC -i $contactFile -o ${resultsDir} -t $validI.binPairCount.uni.KRnorm.bias -b $splineBin -L $lower -r $resolution -p 2
 
 
 ## ************************************************************************************

@@ -273,6 +273,8 @@ Build the prior for mHi-C model using uni-reads only.
 - numpy (>= 1.13.1)
 - scipy (>= 0.19.1)
 - sklearn (>= 0.19.1) 
+- sortedcontainers (>= 1.5.7)
+- matplotlib (>= 2.0.2)
 
 #### 5.1 Arguments
 
@@ -280,6 +282,7 @@ Build the prior for mHi-C model using uni-reads only.
 fragment	(-f/--fragments)	    : Marginal bin list of all the interactions. Midpoints of each fragment is utilized.
 interaction	(-i/--interactions)	    : Interaction files of uni-reads normalized by ICE in step 4.
 outdir		(-o/--outdir)		    : Path to save outputs.
+biasfile	(-t/--biases)		    : Biases file that is calculated by KR norm or ICE normalization.
 splineBin	(-b/--noOfBins)	    	    : Number of equal-occupancy bins. Default is 100.
 priorName	(-l/--lib)		    : Name of file that save the prior quantifying the relationship between random contact probability and genomic distances	.
 ```
@@ -288,21 +291,21 @@ priorName	(-l/--lib)		    : Name of file that save the prior quantifying the rel
 
 ```
 name="TROPHOZOITES"
+bin="$projectPath/bin"
 resultsDir="$projectPath/$name"
-resolution=10000
 validI="${resultsDir}/s4/${name}.validPairs"
+resolution=10000
 splineBin=150
+lower=10000
 priorName="uniPrior"
 normMethod="KR" #"ICE" ##"KR"
-
-if [ "$normMethod" != "None" ] && [ "$normMethod" != "" ] && [ "$normMethod" != "NONE" ] && [ "$normMethod" != "none" ]; then
-    contactFile=$validI.binPairCount.uni.${normMethod}norm
-else
-    contactFile=$validI.binPairCount.uni
-fi
+chromSizeFile=${bin}/plasmodium.chrom.sizes
+contactFile=$validI.binPairCount.uni
 
 echo "Starts step 5 - prior construction based on uni-reads only!"
-python3 s5_prior.py -f $validI.binPair.Marginal -i $contactFile  -o ${resultsDir}/s5 -b $splineBin -l $priorName
+python3 $bin/createFitHiCFragments-fixedsize.py --chrLens "$chromSizeFile" --resolution "$resolution" --outFile "$resultsDir/$name.uni.fragments.mHiC"
+
+python3 s5_prior.py -f ${resultsDir}/$name.uni.fragments.mHiC -i $contactFile -o ${resultsDir} -t $validI.binPairCount.uni.KRnorm.bias -b $splineBin -L $lower -r $resolution -p 2
 ```
 
 ### Step 6 - mHi-C assigning multi-reads [s6_em.py]
