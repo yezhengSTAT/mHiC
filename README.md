@@ -111,7 +111,7 @@ python3 s2_joinEnd.py -r1 ${resultsDir}/s1/${name}_1.sam -r2 ${resultsDir}/s1/${
 
 
 ### Step 3 - Valid fragment filtering [s3_categorizePairs.py]
-This step is to ensure valid read pairs are passed on to downstream analysis while excluding dangling end, self circle, religation, too short-range interactions as well as  invalid alignment that are far away from restriction enzyme cutting sites. Read pairs in each category are summarized.
+This step is to ensure valid read pairs are passed on to downstream analysis while excluding dangling end, self circle, religation, too short-range interactions as well as  invalid alignment that are far away from restriction enzyme cutting sites. Read pairs in each category are summarized. Please note, the mating end alignment information is placed right after the first end alignment. Two read ends share the same read name.
 
 #### 3.0 Requirements
 - python (>= 3.6)
