@@ -284,7 +284,8 @@ interaction	(-i/--interactions)	    : Interaction files of uni-reads normalized 
 outdir		(-o/--outdir)		    : Path to save outputs.
 biasfile	(-t/--biases)		    : Biases file that is calculated by KR norm or ICE normalization.
 splineBin	(-b/--noOfBins)	    	    : Number of equal-occupancy bins. Default is 100.
-priorName	(-l/--lib)		    : Name of file that save the prior quantifying the relationship between random contact probability and genomic distances	.
+priorName	(-l/--lib)		    : Name of file that save the prior quantifying the relationship between random contact probability and genomic distances.
+lowerbound	(-L/--lowerbound)	    : Lower bound on the intra-chromosomal distance range (unit: base pairs). Default is no limit. Suggested limit is 2x the resolution of the input files"
 ```
 
 #### 5.2 Usage
