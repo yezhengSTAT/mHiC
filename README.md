@@ -1,5 +1,5 @@
 # mHi-C: robust leveraging of multi-mapping reads in Hi-C analysis
-Ye Zheng, Ferhat Ay, and Sunduz Keles. "mHi-C: robust leveraging of multi-mapping reads in Hi-C analysis." bioRxiv (2018): 301705.
+Ye Zheng, Ferhat Ay, and Sunduz Keles. [Generative modeling of multi-mapping reads with mHi-C advances analysis of Hi-C studies.](https://elifesciences.org/articles/38070) eLife 2019;8:e38070. 
 
 The pipeline is developed in Keles Research Group in University of Wisconsin - Madison and please contact Ye Zheng (yezheng@stat.wisc.edu) for any question and suggestion.
 
