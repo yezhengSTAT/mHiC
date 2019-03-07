@@ -409,6 +409,20 @@ HWI-ST279:283:D1ACDACXX:8:1101:1359:95492       chr6    35000   chr4    945000  
 HWI-ST279:283:D1ACDACXX:8:1101:1359:95492       chr6    35000   chr4    955000  0.033963876552248806
 ```
 
+#### 6.4 Post-mHiC processing
+1. Filter the mHi-C outcome by the posterior probability. By default, we recommend filtering by >0.5 so that each multi-read can at most have one select alignment position. For a more strigent filtering, it can be set to 0.6 or even 0.9.
+2. Merge the multi-reads contact counts with the uni-reads contact counts.
+
+```
+filterT=0.5
+multiOut=${resultsDir}/s6/${name}.validPairs.binPair.multi.mHiC
+
+awk -v OFS="\t" -v fT=$filterT '$6>fT {print $2, $3, $4, $5}' $multiOut | sort | uniq -c | awk -v OFS="\t" '{print $2, $3, $4, $5, $1}' >$multiOut.binPairCount.multi ## get binPair Count for multi-reads
+cat $uni $multiOut.binPairCount.multi | sort -k1,1V -k2,2n -k3,3V -k4,4n | awk -v OFS="\t" '{a[$1" "$2" "$3" "$4]+=$5}END{for (i in a) print i,a[i]}' | sort -k1,1V -k2,2n -k3,3V -k4,4n >${resultsDir}/s6/${name}.validPairs.binPairCount.uniMulti ## merged with uni-reads binpair count
+
+```
+
+
 ### Step 7 - Significant contacts detection [Fit-Hi-C]
 
 Fit-Hi-C pipeline: https://github.com/ay-lab/fithic
