@@ -19,11 +19,12 @@ normMethod=${6:-"ICE"}
 mappFile=$7
 minMap=${8:-0.5}
 maxIter=${9:-350}
-chromSizeFile=${10}
-sparsePerc=${11:-10}
-summaryFile=${12:-""}
-splitByChrom=${13:-1}
-saveSplitContact=${14:-0};shift 14
+normChrom=${10:-"whole"}
+chromSizeFile=${11}
+sparsePerc=${12:-10}
+summaryFile=${13:-""}
+splitByChrom=${14:-1}
+saveSplitContact=${15:-0};shift 15
 chrList=("$@")
 
 if [ "$normMethod" != "ICE" ] && [ "$normMethod" != "ice" ] && [ "$normMethod" != "KR" ] && [ "$normMethod" != "kr" ]; then
@@ -169,7 +170,7 @@ if [ "$minCount" -gt "1" ];then
 	    # ICE normalization with filtering low mappability regions
 	    python3 $bin/ICE-with-sparseMatrix.py $validI.binPairCount.uni.minCount$minCount $mappFile l1 $validI.binPairCount.uni.ICEnorm $minMap $maxIter
 	else
-	    python3 $bin/KR_norm_mHiC.py -r $resolution -l $chromSizeFile -c "whole" -tr $sparsePerc -f $validI.binPairCount.uni.minCount$minCount -o $dir
+	    python3 $bin/KR_norm_mHiC.py -r $resolution -l $chromSizeFile -c $normChrom -tr $sparsePerc -f $validI.binPairCount.uni.minCount$minCount -o $dir
 	fi
 	## Uni bin marginal pair
 	awk '{print $1, $2}' $validI.binPairCount.uni.${normMethod}norm >$validI.marginal1
@@ -187,7 +188,7 @@ else
 	    # ICE normalization without filtering low mappability regions
 	    python3 $bin/ICE-with-sparseMatrix.py $validI.binPairCount.uni $mappFile l1 $validI.binPairCount.uni.ICEnorm $minMap $maxIter
 	else
-	    python3 $bin/KR_norm_mHiC.py -r $resolution -l $chromSizeFile -c "whole" -tr $sparsePerc -f $validI.binPairCount.uni -o $dir
+	    python3 $bin/KR_norm_mHiC.py -r $resolution -l $chromSizeFile -c $normChrom -tr $sparsePerc -f $validI.binPairCount.uni -o $dir
 	fi
 	## Uni bin marginal pair
 	awk '{print $1, $2}' $validI.binPairCount.uni.${normMethod}norm >$validI.marginal1
