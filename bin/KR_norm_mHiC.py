@@ -194,7 +194,7 @@ def chromLength(chrLens, resolution):
                 for i in range(int(math.ceil(1.0 * int(chrL) / resolution))):
                     mid = int( resolution / 2 ) + i * resolution
                     allFragsDic[chrom][mid] = fragsIndex
-                    revFragsDic.append("_".join([str(chrom), str(mid)]))
+                    revFragsDic.append("=".join([str(chrom), str(mid)]))
                     fragsIndex += 1
         infile.close()
 
@@ -354,8 +354,8 @@ def writeInteraction(matrix, filename, outdir, revFragsDic, chrNum, resolution):
         values = matrix.data
         if chrNum == 'whole':
             for i in range(len(row)):
-                chr1, mid1 = revFragsDic[row[i]].split("_")
-                chr2, mid2 = revFragsDic[col[i]].split("_")
+                chr1, mid1 = revFragsDic[row[i]].split("=")
+                chr2, mid2 = revFragsDic[col[i]].split("=")
                 matrixFile.write(("%s\t%s\t%s\t%s\t%.4f\n") % (chr1, mid1, chr2, mid2, values[i]))
         else:
             for i in range(len(row)):
@@ -371,7 +371,7 @@ def writeBias(bias, filename, outdir, revFragsDicAll, chrNum, resolution):
         with open(biasFile, 'w') as biasWOzero:
             if chrNum == 'whole':
                 for i in range(len(bias)):
-                    chr, mid = revFragsDicAll[i].split("_")
+                    chr, mid = revFragsDicAll[i].split("=")
                     if bias[i, 0] != -1:
                         biasWOzero.write("\t".join([str(chr), str(mid), str(bias[i, 0])]) + "\n")
                     biasWzero.write("\t".join([str(chr), str(mid), str(bias[i, 0])]) + "\n")
