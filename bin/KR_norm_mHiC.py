@@ -356,12 +356,12 @@ def writeInteraction(matrix, filename, outdir, revFragsDic, chrNum, resolution):
             for i in range(len(row)):
                 chr1, mid1 = revFragsDic[row[i]].split("=")
                 chr2, mid2 = revFragsDic[col[i]].split("=")
-                matrixFile.write(("%s\t%s\t%s\t%s\t%.4f\n") % (chr1, mid1, chr2, mid2, values[i]))
+                matrixFile.write(("%s\t%d\t%s\t%d\t%.4f\n") % (chr1, mid1, chr2, mid2, values[i]))
         else:
             for i in range(len(row)):
                 mid1 = row[i] * resolution + resolution/2
                 mid2 = col[i] * resolution + resolution/2
-                matrixFile.write(("%s\t%s\t%s\t%s\t%.4f\n") % (chrNum, mid1, chrNum, mid2, values[i]))
+                matrixFile.write(("%s\t%d\t%s\t%d\t%.4f\n") % (chrNum, mid1, chrNum, mid2, values[i]))
 
 def writeBias(bias, filename, outdir, revFragsDicAll, chrNum, resolution):
 
@@ -373,15 +373,15 @@ def writeBias(bias, filename, outdir, revFragsDicAll, chrNum, resolution):
                 for i in range(len(bias)):
                     chr, mid = revFragsDicAll[i].split("=")
                     if bias[i, 0] != -1:
-                        biasWOzero.write("\t".join([str(chr), str(mid), str(bias[i, 0])]) + "\n")
-                    biasWzero.write("\t".join([str(chr), str(mid), str(bias[i, 0])]) + "\n")
+                        biasWOzero.write("\t".join([str(chr), str(int(mid)), str(bias[i, 0])]) + "\n")
+                    biasWzero.write("\t".join([str(chr), str(int(mid)), str(bias[i, 0])]) + "\n")
 
             else:
                 for i in range(len(bias)):
                     mid = i * resolution + resolution/2
                     if bias[i, 0] != -1:
-                        biasWOzero.write("\t".join([str(chrNum), str(mid), str(bias[i, 0])]) + "\n")
-                    biasWzero.write("\t".join([str(chrNum), str(mid), str(bias[i, 0])]) + "\n")
+                        biasWOzero.write("\t".join([str(chrNum), str(int(mid)), str(bias[i, 0])]) + "\n")
+                    biasWzero.write("\t".join([str(chrNum), str(int(mid)), str(bias[i, 0])]) + "\n")
 
                     
         biasWOzero.close()
