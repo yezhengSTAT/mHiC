@@ -228,14 +228,14 @@ def readInteraction(file, chrNum, resolution, chrLenDic, allFragsDic):
     #load values into the sparse matrix 
     for line in hicFile:
 
-        if chrNum != "whole" and line.startswith(chrNum):
+        if chrNum != "whole": # and line.startswith(chrNum):
             fileLine = line.rstrip().split()
             i = int((fileLine[1]-halfBin)/resolution)
             j = int((fileLine[3]-halfBin)/resolution)
             k = float(fileLine[4])
 
 
-            if (fileLine[0] == fileLine[2]):
+            if (fileLine[0] == chrNum and fileLine[2] == chrNum):
                 try:
                     hic_mtx[i,j] = k
                     hic_mtx[j,i] = k
