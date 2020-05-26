@@ -161,7 +161,7 @@ python3 s5_prior.py -f ${resultsDir}/$name.uni.fragments.mHiC -i $contactFile -o
 name="TROPHOZOITES"
 resultsDir="$projectPath/$name"
 resolution=10000
-prior="${resultsDir}/s5/splineResults"
+prior="${resultsDir}/s5_prior.mhic"
 multi="${resultsDir}/s4/${name}.validPairs.MULTI.binPair.multi"
 multiKeys="$resultsDir/s4/${name}.validPairs.MULTI.binPair.multiKeys" 
 uni="$resultsDir/s4/${name}.validPairs.binPairCount.uni"
